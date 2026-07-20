@@ -8,8 +8,8 @@
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/cyberpunk.css">
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="/static/js/main.js"></script>
+    <script src="/static/js/axios.min.js"></script>
+    <script src="/static/js/main.js?v=3"></script>
 </head>
 <body>
     <nav class="navbar">

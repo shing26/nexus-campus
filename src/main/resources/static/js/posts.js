@@ -125,9 +125,9 @@
         if (!container) return;
         window.api.get('/categories').then(function(res) {
             if (!res.data) return;
-            var html = '<button class="active" data-category="" onclick="filterPosts(this,\\"\\")">All</button>';
+            var html = '<button class="active" data-category="" onclick="filterPosts(this)">All</button>';
             res.data.forEach(function(cat) {
-                html += '<button data-category="' + cat.id + '" onclick="filterPosts(this,\\'' + cat.id + '\\')">' + window.escapeHtml(cat.name) + '</button>';
+                html += '<button data-category="' + cat.id + '" onclick="filterPosts(this,' + cat.id + ')">' + window.escapeHtml(cat.name) + '</button>';
             });
             container.innerHTML = html;
         });
@@ -152,6 +152,11 @@
         var content = document.getElementById('post-content');
         var error = document.getElementById('post-error');
         var submitBtn = document.getElementById('post-submit');
+        if (!category.value) {
+            error.textContent = 'Please select a category.';
+            error.classList.remove('hidden');
+            return;
+        }
         if (!title.value || !content.value) {
             error.textContent = 'Title and content are required.';
             error.classList.remove('hidden');
@@ -239,7 +244,7 @@
         var select = document.getElementById('post-category');
         if (!select) return;
         window.api.get('/categories').then(function(res) {
-            if (!res.data) return;
+            if (!res.data || !Array.isArray(res.data)) return;
             res.data.forEach(function(cat) {
                 var opt = document.createElement('option');
                 opt.value = cat.id;

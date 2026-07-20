@@ -17,6 +17,14 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiResponse<Void> handleNoResource(org.springframework.web.servlet.resource.NoResourceFoundException e) {
+        log.debug("Static resource not found: {}", e.getResourcePath());
+        return ApiResponse.error(404, "Resource not found.");
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleValidation(MethodArgumentNotValidException e) {

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Nexus Campus - Main entry point
  * Shared utilities, API client, loading overlay
  */
@@ -22,6 +22,14 @@
         localStorage.setItem(USER_KEY, JSON.stringify(user));
         updateNavbar();
     };
+
+    window.logout = function() {
+    if (typeof window.showToast === 'function') window.showToast('Disconnected from Nexus.', 'info');
+    localStorage.removeItem('nexus_token');
+    localStorage.removeItem('nexus_user');
+    updateNavbar();
+    window.location.href = '/login';
+};
 
     window.clearAuth = function() {
         localStorage.removeItem(TOKEN_KEY);
@@ -140,7 +148,7 @@
                       '<a href="/admin/dashboard" style="color:var(--text-secondary);padding:8px 16px;text-decoration:none;">Dashboard</a>'
                     : "") +
                 '<a href="/user/profile" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--text-secondary);">' +
-                '  <img src="https://ui-avatars.com/api/?name=' + encodeURIComponent(user.nickname) + "&background=1a1a3e&color=00f0ff&size=32" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--border-color);">' +
+                '  <img src="https://ui-avatars.com/api/?name=' + encodeURIComponent(user.nickname) + "&background=1a1a3e&color=00f0ff&size=32" + ' style="width:24px;height:24px;border-radius:50%;border:1px solid var(--border-color);">' +
                 '  <span>' + window.escapeHtml(user.nickname) + "</span>" +
                 "</a>" +
                 '<button onclick="logout()" class="btn btn-secondary btn-sm">Disconnect</button>';

@@ -1,7 +1,7 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <% request.setAttribute("pageTitle", "New Post - Nexus Campus"); %>
 <%@ include file="../common/header.jsp" %>
-<script src="/static/js/posts.js"></script>
+<script src="/static/js/posts.js?v=3"></script>
 <script src="/static/js/validation.js"></script>
 
     <div class="container-fluid">
