@@ -1,0 +1,30 @@
+﻿# Compiled / build output
+target/
+*.class
+*.jar
+!maven-wrapper.jar
+*.war
+*.log
+*.log.*
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven wrapper (keep the jar, ignore temp)
+!maven-wrapper.jar
+
+# Temp files
+*~
+*.tmp
+*.bak
+
+# Node (if any frontend assets land here)
+node_modules/

@@ -1,0 +1,138 @@
+﻿server:
+  port: 8081
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/plain,text/css,application/javascript
+    min-response-size: 1024
+
+spring:
+  application:
+    name: nexus-campus
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+
+  # JSP View Resolver
+  mvc:
+    view:
+      prefix: /WEB-INF/views/
+      suffix: .jsp
+
+  # H2 Database (dev mode - switch to MySQL for production)
+  datasource:
+    url: jdbc:h2:mem:nexuscampus;DB_CLOSE_DELAY=-1;MODE=MYSQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # Redis Configuration
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 3000
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+  # JPA / Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+  # File upload
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+# MyBatis-Plus
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.nexus.campus.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: ASSIGN_ID
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# JWT Configuration
+jwt:
+  secret: OExHRjA3QjlGRjI0NUI0Q0E1RTdDRjI2MDA3QTUxMjhDOTdBNkY4RjI0NUI0Q0E1RTdDRjI2MDdCOTg2RjA3Qg==
+  expiration: 86400000
+
+# DFA Sensitive Words
+campus:
+  redis:
+    enabled: false
+  upload:
+    dir: src/main/resources/static/uploads
+  security:
+    sensitive-words: fuck,shit,damn,asshole,bitch
+    critical-words: 閺嗘潙濮忛崚鍡氼棁,妫扮姾顩崶钘夘啀,闁亝鏆€缂佸嫮绮?閹劖鈧牔瀵屾稊?閺嬩胶顏€规鏆€,閸掑棜顥囩懛鈧拋?閸欏秴濮╂穱鈩冧紖
+    audit-required-level: 2
+
+# Logging
+logging:
+  level:
+    com.nexus.campus: DEBUG
+    org.springframework: INFO
+    org.mybatis: INFO
+
+---
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+---
+spring:
+  config:
+    activate:
+      on-profile: mysql
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/nexus_campus?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: root
+    h2:
+      console:
+        enabled: false
+    sql:
+      init:
+        mode: never
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
