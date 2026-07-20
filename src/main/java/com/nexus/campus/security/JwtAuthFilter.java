@@ -18,6 +18,7 @@ public class JwtAuthFilter implements Filter {
             "/api/v1/auth/refresh",
             "/api/v1/categories",
             "/api/v1/tags",
+            "/api/demo/",
             "/uploads/",
             "/static/",
             "/h2-console"
