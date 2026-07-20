@@ -12,6 +12,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -31,6 +33,12 @@ class LikeCounterServiceTest {
 
     @Mock
     private BbsPostMapper bbsPostMapper;
+
+    @Mock
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Mock
+    private DefaultRedisScript<Long> likeToggleScript;
 
     @Mock
     private PostRankingService postRankingService;

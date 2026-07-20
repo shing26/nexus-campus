@@ -1,29 +1,30 @@
 package com.nexus.campus.service;
 
-import com.nexus.campus.mapper.BbsPostMapper;
 import com.nexus.campus.entity.BbsPost;
+import com.nexus.campus.mapper.BbsPostMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
-import java.util.Set;
+import java.util.List;
+import java.util.Arrays;
 
 /**
- * Asynchronous Redis-backed like counter with scheduled batch flush to MySQL.
+ * Redis-backed like counter with atomic Lua toggle and scheduled delta flush.
  *
- * <p>When a user likes or unlikes a post, the operation is recorded in a
- * Redis <strong>Set</strong> ({@code post:like:{postId}}) for O(1) membership
- * checks and a dirt-tracking Set ({@code post:like:dirty}) marks which posts
- * need their MySQL row updated.  A {@link Scheduled @Scheduled} method runs
- * every 5 minutes and flushes all dirty counters to the database in a single
- * batch, avoiding connection-exhaustion under heavy write load.</p>
+ * <p>Uses a Lua script ({@code lua/like_toggle.lua}) to atomically toggle
+ * a user's like on a post, updating the membership Set, delta Hash, dirty
+ * tracker Set, and ranking ZSet in a single round-trip. A separate
+ * {@code LikeSyncTask} periodically flushes accumulated deltas to MySQL.</p>
  *
  * <p>If Redis is unavailable the service degrades gracefully and falls back
- * to direct MySQL {@code UPDATE bbs_post SET like_count = like_count + 1}.</p>
+ * to direct MySQL writes.</p>
  */
 @Service
 public class LikeCounterService {
@@ -31,29 +32,34 @@ public class LikeCounterService {
     private static final Logger log = LoggerFactory.getLogger(LikeCounterService.class);
 
     private static final String LIKE_SET_PREFIX   = "post:like:";
-    private static final String DIRTY_SET_KEY     = "post:like:dirty";
+    private static final String LIKE_DELTA_PREFIX = "post:like:delta:";
+    static final String DIRTY_SET_KEY     = "post:like:dirty";
+    static final String RANKING_KEY       = "post:ranking:likes";
+    private static final String DEFAULT_WEIGHT = "3";
 
     @Autowired(required = false)
-    private RedisTemplate<String, Object> redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired(required = false)
+    private DefaultRedisScript<Long> likeToggleScript;
 
     @Autowired
     private BbsPostMapper bbsPostMapper;
 
-    @Autowired(required = false)
-    private PostRankingService postRankingService;
-
-    private boolean redisAvailable;
+    boolean redisAvailable;
 
     @PostConstruct
     void init() {
-        redisAvailable = (redisTemplate != null);
+        redisAvailable = (stringRedisTemplate != null && likeToggleScript != null);
         if (redisAvailable) {
             try {
-                redisTemplate.getConnectionFactory().getConnection().ping();
-                log.info("[NEXUS-LIKE] Redis connection established. Async like counting active.");
+                RedisConnection conn = stringRedisTemplate.getConnectionFactory().getConnection();
+                conn.ping();
+                conn.close();
+                log.info("[NEXUS-LIKE] Redis connection established. Atomic Lua like counter active.");
             } catch (Exception e) {
                 redisAvailable = false;
-                log.warn("[NEXUS-LIKE] Redis ping failed — falling back to direct MySQL writes. Cause: {}", e.getMessage());
+                log.warn("[NEXUS-LIKE] Redis ping failed \u2014 falling back to direct MySQL writes. Cause: {}", e.getMessage());
             }
         } else {
             log.info("[NEXUS-LIKE] Redis not configured. Using direct MySQL writes.");
@@ -65,50 +71,44 @@ public class LikeCounterService {
     // =================================================
 
     /**
-     * Record a like from {@code userId} on {@code postId}.
+     * Toggle a like from {@code userId} on {@code postId}. If the user has
+     * already liked the post the like is removed; otherwise it is added.
      *
      * @return the current total like count for the post
      */
     public long likePost(Long postId, Long userId) {
-        long count;
         if (redisAvailable) {
-            count = likeViaRedis(postId, userId);
-        } else {
-            count = likeViaMysql(postId);
+            return executeLikeToggle(postId, userId);
         }
-        // Update ranking
-        if (postRankingService != null) {
-            postRankingService.onLike(postId, count);
-        }
-        return count;
+        return likeViaMysql(postId);
     }
 
     /**
-     * Remove a like from {@code userId} on {@code postId}.
+     * Remove a like from {@code userId} on {@code postId}.  Idempotent \u2014
+     * if the user has not previously liked the post the count stays unchanged.
      *
      * @return the current total like count for the post
      */
     public long unlikePost(Long postId, Long userId) {
-        if (!redisAvailable) return likeViaMysql(postId);  // idempotent fallback
-
-        String key = LIKE_SET_PREFIX + postId;
-        Long removed = redisTemplate.opsForSet().remove(key, userId.toString());
-        if (removed != null && removed > 0) {
-            redisTemplate.opsForSet().add(DIRTY_SET_KEY, postId.toString());
+        if (!redisAvailable) {
+            return unlikeViaMysql(postId);
         }
-        Long count = redisTemplate.opsForSet().size(key);
-        return count != null ? count : 0;
+        return executeLikeToggle(postId, userId);
     }
 
     /**
      * Check whether {@code userId} has already liked {@code postId}.
      */
     public boolean isLiked(Long postId, Long userId) {
-        if (!redisAvailable) return false;   // best-effort when Redis is off
-
-        String key = LIKE_SET_PREFIX + postId;
-        Boolean member = redisTemplate.opsForSet().isMember(key, userId.toString());
-        return Boolean.TRUE.equals(member);
+        if (!redisAvailable) return false;
+        try {
+            String key = LIKE_SET_PREFIX + postId;
+            Boolean member = stringRedisTemplate.opsForSet().isMember(key, userId.toString());
+            return Boolean.TRUE.equals(member);
+        } catch (Exception e) {
+            log.warn("[NEXUS-LIKE] isLiked check failed for post {}: {}", postId, e.getMessage());
+            return false;
+        }
     }
 
     /**
@@ -117,34 +117,46 @@ public class LikeCounterService {
      */
     public long getLikeCount(Long postId) {
         if (redisAvailable) {
-            String key = LIKE_SET_PREFIX + postId;
-            Long count = redisTemplate.opsForSet().size(key);
-            return count != null ? count : 0;
+            try {
+                String key = LIKE_SET_PREFIX + postId;
+                Long count = stringRedisTemplate.opsForSet().size(key);
+                return count != null ? count : 0;
+            } catch (Exception e) {
+                log.warn("[NEXUS-LIKE] getLikeCount from Redis failed for post {}: {}", postId, e.getMessage());
+            }
         }
-        com.nexus.campus.entity.BbsPost post = bbsPostMapper.selectById(postId);
+        BbsPost post = bbsPostMapper.selectById(postId);
         return post != null ? post.getLikeCount() : 0;
     }
 
     // =================================================
-    //  Internal: Redis path
+    //  Internal: Lua atomic path
     // =================================================
 
-    private long likeViaRedis(Long postId, Long userId) {
-        String key = LIKE_SET_PREFIX + postId;
-
-        // Add user to the like set; SADD returns 1 if the element was NEW
-        Long added = redisTemplate.opsForSet().add(key, userId.toString());
-
-        if (added != null && added > 0) {
-            // Brand-new like → mark this post as needing a MySQL sync
-            redisTemplate.opsForSet().add(DIRTY_SET_KEY, postId.toString());
-            log.debug("[NEXUS-LIKE] User {} liked post {} (new)", userId, postId);
-        } else {
-            log.debug("[NEXUS-LIKE] User {} liked post {} (already liked, idempotent)", userId, postId);
+    private long executeLikeToggle(Long postId, Long userId) {
+        if (stringRedisTemplate == null || likeToggleScript == null) {
+            return likeViaMysql(postId);
         }
-
-        Long count = redisTemplate.opsForSet().size(key);
-        return count != null ? count : 0;
+        try {
+            List<String> keys = Arrays.asList(
+                LIKE_SET_PREFIX + postId,
+                LIKE_DELTA_PREFIX + postId,
+                DIRTY_SET_KEY,
+                RANKING_KEY
+            );
+            Long count = stringRedisTemplate.execute(
+                likeToggleScript,
+                keys,
+                userId.toString(),
+                postId.toString(),
+                DEFAULT_WEIGHT
+            );
+            return count != null ? count : 0;
+        } catch (DataAccessException e) {
+            log.warn("[NEXUS-LIKE] Lua script execution failed for post {}: {}", postId, e.getMessage());
+            // Degrade gracefully
+            return likeViaMysql(postId);
+        }
     }
 
     // =================================================
@@ -153,58 +165,17 @@ public class LikeCounterService {
 
     private long likeViaMysql(Long postId) {
         bbsPostMapper.incrementLikeCount(postId);
-        com.nexus.campus.entity.BbsPost post = bbsPostMapper.selectById(postId);
+        BbsPost post = bbsPostMapper.selectById(postId);
         long count = (post != null) ? post.getLikeCount() : 0;
         log.debug("[NEXUS-LIKE] Direct MySQL like on post {} (count={})", postId, count);
         return count;
     }
 
-    // =================================================
-    //  Scheduled batch flush
-    // =================================================
-
-    /**
-     * Every 5 minutes, read every post ID from the dirty set, query Redis for
-     * the current {@code SCARD}, and batch-update the MySQL {@code like_count}
-     * column.  Cleaned keys are removed from the dirty set so they won't be
-     * flushed again until the next like/unlike.
-     */
-    @Scheduled(cron = "0 0/5 * * * ?")
-    public void batchSyncLikes() {
-        if (!redisAvailable) return;
-
-        Set<Object> dirtyPosts = redisTemplate.opsForSet().members(DIRTY_SET_KEY);
-        if (dirtyPosts == null || dirtyPosts.isEmpty()) {
-            return;
-        }
-
-        int synced = 0;
-        int failed = 0;
-
-        for (Object postIdObj : dirtyPosts) {
-            String postIdStr = postIdObj.toString();
-            try {
-                Long postId = Long.parseLong(postIdStr);
-                String key = LIKE_SET_PREFIX + postId;
-                Long redisCount = redisTemplate.opsForSet().size(key);
-
-                if (redisCount != null) {
-                    bbsPostMapper.updateLikeCount(postId, redisCount.intValue());
-                }
-
-                // Remove from dirty set so it's not re-processed next cycle
-                redisTemplate.opsForSet().remove(DIRTY_SET_KEY, postIdStr);
-                synced++;
-
-            } catch (Exception e) {
-                failed++;
-                log.error("[NEXUS-LIKE] Failed to sync post {}: {}", postIdStr, e.getMessage());
-            }
-        }
-
-        if (synced > 0 || failed > 0) {
-            log.info("[NEXUS-LIKE] Batch sync complete — {} posts synced, {} failed",
-                    synced, failed);
-        }
+    private long unlikeViaMysql(Long postId) {
+        bbsPostMapper.updateLikeCountDelta(postId, -1);
+        BbsPost post = bbsPostMapper.selectById(postId);
+        long count = (post != null) ? Math.max(post.getLikeCount(), 0) : 0;
+        log.debug("[NEXUS-LIKE] Direct MySQL unlike on post {} (count={})", postId, count);
+        return count;
     }
 }

@@ -1,36 +1,53 @@
 package com.nexus.campus.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.nexus.campus.dto.PageResult;
 import com.nexus.campus.dto.PostPageVo;
-import com.nexus.campus.mapper.BbsPostMapper;
 import com.nexus.campus.entity.BbsPost;
+import com.nexus.campus.mapper.BbsPostMapper;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Redis ZSET-backed post ranking (hot posts) with scheduled refresh.
+ * Gravity-decay hot ranking backed by Redis ZSET with hourly recalculation.
  *
- * <p>Ranking key: {@code post:ranking:likes} — member = postId, score = like count.</p>
+ * <p>Ranking key: {@code post:ranking:likes}  \u2014 member = postId, score = gravity-decay score.
+ * Real-time like/unlike events incrementally adjust the score via the
+ * {@code LikeCounterService} Lua script; a scheduled task recalculates the
+ * full gravity-decay formula every hour for posts created within the last 7 days.</p>
  *
- * <p>Gracefully degrades to MySQL {@code ORDER BY like_count DESC} when Redis is
- * unavailable.</p>
+ * <p>Formula: (L * 10 + C * 20 + V * 1) / Math.pow(ageInHours + 2, 1.5)</p>
+ *
+ * <p>Gracefully degrades to MySQL ORDER BY when Redis is unavailable.</p>
  */
 @Service
 public class PostRankingService {
 
     private static final Logger log = LoggerFactory.getLogger(PostRankingService.class);
-    private static final String RANKING_KEY = "post:ranking:likes";
+
+    /** Must match the constant used in {@link LikeCounterService#RANKING_KEY}. */
+    static final String RANKING_KEY = "post:ranking:likes";
+
+    private static final int RECALCULATION_DAYS = 7;
 
     @Autowired(required = false)
-    private RedisTemplate<String, Object> redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     @Autowired
     private BbsPostMapper bbsPostMapper;
@@ -39,11 +56,13 @@ public class PostRankingService {
 
     @PostConstruct
     void init() {
-        redisAvailable = (redisTemplate != null);
+        redisAvailable = (stringRedisTemplate != null);
         if (redisAvailable) {
             try {
-                redisTemplate.getConnectionFactory().getConnection().ping();
-                log.info("[NEXUS-RANKING] Redis connection established.");
+                RedisConnection conn = stringRedisTemplate.getConnectionFactory().getConnection();
+                conn.ping();
+                conn.close();
+                log.info("[NEXUS-RANKING] Redis connection established. Gravity-decay ranking active.");
             } catch (Exception e) {
                 redisAvailable = false;
                 log.warn("[NEXUS-RANKING] Redis unavailable, ranking degraded to MySQL. Cause: {}", e.getMessage());
@@ -53,57 +72,131 @@ public class PostRankingService {
         }
     }
 
-    /**
-     * Called when a post is liked — updates the ZSET score.
-     */
-    public void onLike(Long postId, long currentLikeCount) {
-        if (!redisAvailable) return;
-        try {
-            redisTemplate.opsForZSet().add(RANKING_KEY, postId.toString(), currentLikeCount);
-        } catch (Exception e) {
-            log.warn("[NEXUS-RANKING] Failed to update ranking for post {}: {}", postId, e.getMessage());
-        }
-    }
+    // =================================================
+    //  Public API
+    // =================================================
 
     /**
-     * Get the top N hot posts.
+     * Get a page of hot posts ordered by gravity-decay score descending.
+     *
+     * @param page 1-based page number
+     * @param size page size
+     * @return paginated hot posts
+     */
+    /**
+     * Get the top N hot posts (backward-compatible convenience wrapper).
      *
      * @param limit number of posts to return
-     * @return list of PostPageVo sorted by like count descending
+     * @return list of PostPageVo sorted by gravity-decay score descending
      */
     public List<PostPageVo> getHotPosts(int limit) {
+        PageResult<PostPageVo> pageResult = getHotRankPage(1, limit);
+        return pageResult.getList();
+    }
+
+    public PageResult<PostPageVo> getHotRankPage(int page, int size) {
         if (redisAvailable) {
             try {
-                Set<ZSetOperations.TypedTuple<Object>> top =
-                        redisTemplate.opsForZSet().reverseRangeWithScores(RANKING_KEY, 0, limit - 1);
+                long start = (long) (page - 1) * size;
+                long end = start + size - 1;
+
+                Set<ZSetOperations.TypedTuple<String>> top =
+                        stringRedisTemplate.opsForZSet().reverseRangeWithScores(RANKING_KEY, start, end);
+
                 if (top == null || top.isEmpty()) {
-                    return getFallbackHotPosts(limit);
+                    return PageResult.of(page, size, 0, List.of());
                 }
 
                 List<Long> postIds = top.stream()
-                        .map(t -> Long.parseLong(t.getValue().toString()))
+                        .map(t -> Long.parseLong(t.getValue()))
                         .collect(Collectors.toList());
 
-                // Fetch from MySQL by IDs and preserve order
-                return fetchAndOrderByIds(postIds);
-        } catch (Exception e) {
-            log.warn("[NEXUS-RANKING] Redis read failed, falling back to MySQL: {}", e.getMessage());
-                return getFallbackHotPosts(limit);
+                Long total = stringRedisTemplate.opsForZSet().zCard(RANKING_KEY);
+                long totalVal = total != null ? total : 0;
+
+                List<PostPageVo> vos = fetchAndOrderByIds(postIds);
+                return PageResult.of(page, size, totalVal, vos);
+            } catch (Exception e) {
+                log.warn("[NEXUS-RANKING] Redis read failed, falling back to MySQL: {}", e.getMessage());
             }
         }
-        return getFallbackHotPosts(limit);
+        return getFallbackHotRankPage(page, size);
     }
 
+    // =================================================
+    //  Scheduled recalculation (hourly)
+    // =================================================
+
     /**
-     * Refresh the Redis ranking ZSET then reorder the fetched posts by
-     * their position in {@code postIds} so they match the rank order.
+     * Recalculate all hot-post scores using the gravity-decay formula every hour.
+     * Posts older than 7 days are removed from the ranking.
      */
-    private List<PostPageVo> fetchAndOrderByIds(List<Long> postIds) {
-        List<BbsPost> posts = bbsPostMapper.selectByIdsOrdered(postIds);
-        if (posts == null || posts.isEmpty()) {
-            return getFallbackHotPosts(postIds.size());
+    @Scheduled(cron = "0 0 * * * ?")
+    public void recalculateHotRanking() {
+        if (!redisAvailable) return;
+
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime cutoff = now.minusDays(RECALCULATION_DAYS);
+
+            List<BbsPost> posts = bbsPostMapper.selectList(
+                    new LambdaQueryWrapper<BbsPost>()
+                            .eq(BbsPost::getStatus, 1)
+                            .ge(BbsPost::getCreateTime, cutoff)
+                            .orderByDesc(BbsPost::getCreateTime)
+            );
+
+            if (posts == null || posts.isEmpty()) {
+                log.debug("[NEXUS-RANKING] No recent posts to recalculate.");
+                return;
+            }
+
+            // Delete old ranking and rebuild
+            stringRedisTemplate.delete(RANKING_KEY);
+            ZSetOperations<String, String> zset = stringRedisTemplate.opsForZSet();
+
+            int count = 0;
+            for (BbsPost post : posts) {
+                double score = computeGravityScore(post, now);
+                if (score > 0) {
+                    zset.add(RANKING_KEY, post.getId().toString(), score);
+                    count++;
+                }
+            }
+
+            log.info("[NEXUS-RANKING] Ranking recalculated \u2014 {} posts scored (past {} days).", count, RECALCULATION_DAYS);
+        } catch (Exception e) {
+            log.warn("[NEXUS-RANKING] Recalculation failed: {}", e.getMessage());
         }
-        // Preserve the order from postIds (which is the Redis rank order)
+    }
+
+    // =================================================
+    //  Gravity-decay formula
+    // =================================================
+
+    static double computeGravityScore(BbsPost post, LocalDateTime now) {
+        long likeCount    = post.getLikeCount() != null ? post.getLikeCount() : 0;
+        long commentCount = post.getCommentCount() != null ? post.getCommentCount() : 0;
+        long viewCount    = post.getViewCount() != null ? post.getViewCount() : 0;
+
+        double ageInHours = ChronoUnit.HOURS.between(post.getCreateTime(), now);
+        if (ageInHours < 0) ageInHours = 0; // safeguard for future-dated posts
+
+        return (likeCount * 10 + commentCount * 20 + viewCount * 1)
+                / Math.pow(ageInHours + 2, 1.5);
+    }
+
+    // =================================================
+    //  Internal helpers
+    // =================================================
+
+    private List<PostPageVo> fetchAndOrderByIds(List<Long> postIds) {
+        if (postIds.isEmpty()) return List.of();
+
+        List<BbsPost> posts = bbsPostMapper.selectByIdsOrdered(postIds);
+        if (posts == null || posts.isEmpty()) return List.of();
+
+        // Preserve order from postIds (which is the Redis rank order)
         java.util.Map<Long, BbsPost> map = new java.util.HashMap<>();
         for (BbsPost p : posts) {
             map.put(p.getId(), p);
@@ -118,42 +211,61 @@ public class PostRankingService {
         return ordered.stream().map(this::convertToPageVo).collect(java.util.stream.Collectors.toList());
     }
 
-    /**
-     * Scheduled task every 10 minutes to refresh the ranking ZSET from MySQL.
-     */
-    @Scheduled(cron = "0 0/10 * * * ?")
-    public void refreshRanking() {
-        if (!redisAvailable) return;
-        try {
-            List<BbsPost> topPosts = bbsPostMapper.selectTopLikedPosts(100);
-            if (topPosts == null || topPosts.isEmpty()) {
-                log.debug("[NEXUS-RANKING] No posts to refresh ranking.");
-                return;
-            }
-            redisTemplate.delete(RANKING_KEY);
-            ZSetOperations<String, Object> zset = redisTemplate.opsForZSet();
-            for (BbsPost post : topPosts) {
-                zset.add(RANKING_KEY, post.getId().toString(), post.getLikeCount());
-            }
-            log.info("[NEXUS-RANKING] Ranking refreshed — {} posts loaded from MySQL.", topPosts.size());
-        } catch (Exception e) {
-            log.warn("[NEXUS-RANKING] Refresh failed: {}", e.getMessage());
+    private PageResult<PostPageVo> getFallbackHotRankPage(int page, int size) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime cutoff = now.minusDays(RECALCULATION_DAYS);
+
+        List<BbsPost> allPosts = bbsPostMapper.selectList(
+                new LambdaQueryWrapper<BbsPost>()
+                        .eq(BbsPost::getStatus, 1)
+                        .ge(BbsPost::getCreateTime, cutoff)
+        );
+
+        if (allPosts == null || allPosts.isEmpty()) {
+            return PageResult.of(page, size, 0, List.of());
         }
-    }
 
-    // ================================================
-    //  Fallback
-    // ================================================
+        // Compute gravity-decay scores and sort
+        List<ScoredPost> scored = new ArrayList<>();
+        for (BbsPost p : allPosts) {
+            double score = computeGravityScore(p, now);
+            scored.add(new ScoredPost(p, score));
+        }
+        scored.sort(Comparator.comparingDouble(ScoredPost::score).reversed());
 
-    private List<PostPageVo> getFallbackHotPosts(int limit) {
-        List<BbsPost> posts = bbsPostMapper.selectTopLikedPosts(limit);
-        if (posts == null) return List.of();
-        return posts.stream().map(this::convertToPageVo).collect(Collectors.toList());
+        // Paginate
+        int fromIndex = (page - 1) * size;
+        int toIndex = Math.min(fromIndex + size, scored.size());
+
+        if (fromIndex >= scored.size()) {
+            return PageResult.of(page, size, scored.size(), List.of());
+        }
+
+        List<PostPageVo> vos = scored.subList(fromIndex, toIndex).stream()
+                .map(sp -> convertToPageVo(sp.post()))
+                .collect(Collectors.toList());
+
+        return PageResult.of(page, size, scored.size(), vos);
     }
 
     private PostPageVo convertToPageVo(BbsPost post) {
         PostPageVo vo = new PostPageVo();
-        org.springframework.beans.BeanUtils.copyProperties(post, vo);
+        BeanUtils.copyProperties(post, vo);
         return vo;
     }
+
+    /**
+     * Update a post's ZSET score when a like event occurs (backward-compatible).
+     * Called by deprecated {@code BbsPostServiceImpl.likePost}.
+     */
+    public void onLike(Long postId, long currentLikeCount) {
+        if (!redisAvailable) return;
+        try {
+            stringRedisTemplate.opsForZSet().add(RANKING_KEY, postId.toString(), currentLikeCount);
+        } catch (Exception e) {
+            log.warn("[NEXUS-RANKING] Failed to update ranking for post {}: {}", postId, e.getMessage());
+        }
+    }
+
+    private record ScoredPost(BbsPost post, double score) {}
 }

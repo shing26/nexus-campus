@@ -71,6 +71,9 @@ public interface BbsPostMapper extends BaseMapper<BbsPost> {
     @Update("UPDATE bbs_post SET like_count = #{count} WHERE id = #{id}")
     int updateLikeCount(@Param("id") Long id, @Param("count") Integer count);
 
+    @Update("UPDATE bbs_post SET like_count = like_count + #{delta} WHERE id = #{postId}")
+    int updateLikeCountDelta(@Param("postId") Long postId, @Param("delta") int delta);
+
     @Select("SELECT p.*, u.nickname as authorName, c.name as categoryName " +
             "FROM bbs_post p " +
             "LEFT JOIN sys_user u ON p.user_id = u.id " +

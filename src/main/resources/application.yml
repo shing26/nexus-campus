@@ -1,4 +1,4 @@
-﻿server:
+server:
   port: 8081
   servlet:
     context-path: /
@@ -14,6 +14,14 @@
 spring:
   application:
     name: nexus-campus
+  task:
+    execution:
+      pool:
+        core-size: 4
+        max-size: 10
+        queue-capacity: 100
+    thread-name-prefix: nexus-async-
+
 
   autoconfigure:
     exclude:
@@ -46,6 +54,7 @@ spring:
 
   # Redis Configuration
   redis:
+    enabled: true
     host: localhost
     port: 6379
     timeout: 3000
@@ -95,7 +104,7 @@ campus:
     dir: src/main/resources/static/uploads
   security:
     sensitive-words: fuck,shit,damn,asshole,bitch
-    critical-words: 閺嗘潙濮忛崚鍡氼棁,妫扮姾顩崶钘夘啀,闁亝鏆€缂佸嫮绮?閹劖鈧牔瀵屾稊?閺嬩胶顏€规鏆€,閸掑棜顥囩懛鈧拋?閸欏秴濮╂穱鈩冧紖
+    critical-words: 闁哄棙娼欐慨蹇涘礆閸℃凹妫?濡壆濮鹃々顐﹀炊閽樺鍟€,闂侇収浜濋弳鈧紓浣稿缁?闁诡厽鍔栭埀顒佺墧鐎靛本绋?闁哄鑳堕顒傗偓瑙勵殕閺嗏偓,闁告帒妫滈ˉ鍥╂嚊閳ь剛鎷?闁告瑥绉存慨鈺傜┍閳╁啩绱?
     audit-required-level: 2
 
 # Logging

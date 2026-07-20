@@ -12,9 +12,16 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.cache.CacheManager;
+import org.springframework.core.io.ClassPathResource;
 
 import java.time.Duration;
 
@@ -45,6 +52,11 @@ public class RedisConfig {
     }
 
     @Bean
+    public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory factory) {
+        return new StringRedisTemplate(factory);
+    }
+
+    @Bean
     public CacheManager cacheManager(RedisConnectionFactory factory) {
         Jackson2JsonRedisSerializer<Object> jacksonSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
         ObjectMapper om = new ObjectMapper();
@@ -62,4 +74,30 @@ public class RedisConfig {
                 .cacheDefaults(config)
                 .build();
     }
+
+    @Bean
+    MessageListenerAdapter sensitiveWordListenerAdapter(
+            com.nexus.campus.service.SensitiveWordService service) {
+        return new MessageListenerAdapter(service);
+    }
+
+    @Bean
+    RedisMessageListenerContainer redisMessageListenerContainer(
+            RedisConnectionFactory connectionFactory,
+            MessageListenerAdapter sensitiveWordListenerAdapter) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+        container.addMessageListener(sensitiveWordListenerAdapter,
+                ChannelTopic.of("channel:sensitive:words:update"));
+        return container;
+    }
+
+    @Bean
+    public DefaultRedisScript<Long> likeToggleScript() {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setLocation(new ClassPathResource("lua/like_toggle.lua"));
+        script.setResultType(Long.class);
+        return script;
+    }
+
 }

@@ -4,12 +4,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Component
 public class DfaFilter {
 
-    private final TrieNode root = new TrieNode();
+    private static final Logger log = LoggerFactory.getLogger(DfaFilter.class);
+
+    private final AtomicReference<TrieNode> rootNodeRef = new AtomicReference<>(new TrieNode());
 
     @Value("#{'${campus.security.sensitive-words:}'.split(',')}")
     private List<String> sensitiveWords;
@@ -26,6 +31,10 @@ public class DfaFilter {
     }
 
     public void addWord(String word) {
+        addWord(word, rootNodeRef.get());
+    }
+
+    private void addWord(String word, TrieNode root) {
         TrieNode node = root;
         for (char c : word.toCharArray()) {
             node = node.children.computeIfAbsent(c, k -> new TrieNode());
@@ -36,6 +45,7 @@ public class DfaFilter {
     public boolean containsSensitiveWord(String text) {
         if (text == null || text.isEmpty()) return false;
         String lowerText = text.toLowerCase();
+        TrieNode root = rootNodeRef.get();
 
         for (int i = 0; i < lowerText.length(); i++) {
             TrieNode node = root;
@@ -53,6 +63,7 @@ public class DfaFilter {
         if (text == null || text.isEmpty()) return text;
         StringBuilder result = new StringBuilder();
         String lowerText = text.toLowerCase();
+        TrieNode root = rootNodeRef.get();
 
         for (int i = 0; i < lowerText.length(); i++) {
             TrieNode node = root;
@@ -71,6 +82,34 @@ public class DfaFilter {
             }
         }
         return result.toString();
+    }
+
+    public void reloadTrieTree(List<String> newWords) {
+        TrieNode newRoot = new TrieNode();
+        for (String word : newWords) {
+            if (word != null && !word.trim().isEmpty()) {
+                addWord(word.trim().toLowerCase(), newRoot);
+            }
+        }
+        rootNodeRef.set(newRoot);
+    }
+
+    /**
+     * Hot-reload the trie from the configured sensitive-words list.
+     * Creates a brand new trie atomically (thread-safe via AtomicReference).
+     */
+    public void reloadTrieTree() {
+        log.info("[NEXUS-DFA] Reloading trie tree from configuration...");
+        TrieNode newRoot = new TrieNode();
+        if (sensitiveWords != null) {
+            for (String word : sensitiveWords) {
+                if (word != null && !word.trim().isEmpty()) {
+                    addWord(word.trim().toLowerCase(), newRoot);
+                }
+            }
+        }
+        rootNodeRef.set(newRoot);
+        log.info("[NEXUS-DFA] Trie reload complete.");
     }
 
     private static class TrieNode {

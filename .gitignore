@@ -26,5 +26,11 @@ Thumbs.db
 *.tmp
 *.bak
 
+*.tmp
+*.bak
+
+# Development / scratch scripts
+fix_*.py
+
 # Node (if any frontend assets land here)
 node_modules/
