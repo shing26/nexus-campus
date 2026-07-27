@@ -3,15 +3,20 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 
 const channels = [
-  { slug: 'general', label: 'General' },
-  { slug: 'tech', label: 'Tech' },
-  { slug: 'design', label: 'Design' },
-  { slug: 'random', label: 'Random' },
+  { slug: 'announcements', label: '公告' },
+  { slug: 'prompts', label: 'Prompt 工坊' },
+  { slug: 'showcase', label: '作品展示' },
+  { slug: 'agents', label: 'Agent 实战' },
+  { slug: 'vibe-coding', label: 'Vibe Coding' },
+  { slug: 'debug', label: '代码急诊室' },
+  { slug: 'resources', label: '资源聚合' },
 ];
 
 export default function Navbar() {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuthStore();
+  const isAdmin = user?.role === "ADMIN";
+  const visibleChannels = channels.filter(ch => isAdmin || ch.slug !== "announcements");
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
@@ -35,7 +40,7 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-6 ml-8">
-            {channels.map((ch) => (
+            {visibleChannels.map((ch) => (
               <Link
                 key={ch.slug}
                 to={'/channel/' + ch.slug}
@@ -94,3 +99,5 @@ export default function Navbar() {
     </nav>
   );
 }
+
+

@@ -5,10 +5,12 @@ import PostCard from '../components/PostCard';
 
 
 const heroChannels = [
-  { slug: 'prompts', name: 'Prompts', description: 'Share and discover AI prompts', icon: '?', color: 'from-violet-500 to-purple-600' },
-  { slug: 'workflows', name: 'Workflows', description: 'Multi-step agent patterns & pipelines', icon: '??', color: 'from-blue-500 to-cyan-600' },
-  { slug: 'tools', name: 'Tools', description: 'Apps, integrations & utilities', icon: '??', color: 'from-emerald-500 to-teal-600' },
-  { slug: 'general', name: 'General', description: 'All things Nexus �� chat, links & discussion', icon: '??', color: 'from-amber-500 to-orange-600' },
+  { slug: 'prompts', name: 'Prompt 工坊', description: 'System Prompt 设计、Chain-of-Thought、少样本技巧', icon: '\u{1F9E0}', color: 'from-violet-500 to-purple-600' },
+  { slug: 'showcase', name: '作品展示', description: 'Vibe Coding 成品展示：网页、工具、自动化流程', icon: '\u{1F3A8}', color: 'from-pink-500 to-rose-600' },
+  { slug: 'agents', name: 'Agent 实战', description: 'Multi-Agent、工具调用、OpenClaw/Codex 使用心得', icon: '\u{1F916}', color: 'from-blue-500 to-cyan-600' },
+  { slug: 'vibe-coding', name: 'Vibe Coding 经验', description: '上下文控制、幻觉治理、架构设计的纯经验讨论', icon: '\u{26A1}', color: 'from-emerald-500 to-teal-600' },
+  { slug: 'debug', name: '代码急诊室', description: '贴报错上下文，社区或 AI Agent 协助分析', icon: '\u{1F6A8}', color: 'from-red-500 to-orange-600' },
+  { slug: 'resources', name: '资源聚合', description: '工具链推荐、API 评测、教程链接', icon: '\u{1F4DA}', color: 'from-amber-500 to-yellow-600' },
 ];
 
 export default function HomePage() {
@@ -33,7 +35,7 @@ export default function HomePage() {
               Nexus-Vibe
             </h1>
             <p className="text-lg text-indigo-200 max-w-2xl mx-auto">
-              Discover, share, and remix AI prompts, workflows, and tools with the community.
+              Prompt 设计、Agent 实战、Vibe Coding——AI 开发者的技术交流社区
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -83,6 +85,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 
