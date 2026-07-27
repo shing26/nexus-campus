@@ -3,7 +3,7 @@ package com.nexus.campus.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nexus.campus.dto.PageResult;
 import com.nexus.campus.dto.PostPageVo;
-import com.nexus.campus.entity.BbsPost;
+import com.nexus.campus.entity.VibePost;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +62,7 @@ public class PostSearchService {
             }
         } catch (Exception e) {
             esAvailable = false;
-            log.warn("[NEXUS-ES] Elasticsearch not available at {} — search degraded to MySQL. Cause: {}", ES_BASE, e.getMessage());
+            log.warn("[NEXUS-ES] Elasticsearch not available at {} - search degraded to MySQL. Cause: {}", ES_BASE, e.getMessage());
         }
     }
 
@@ -75,7 +75,7 @@ public class PostSearchService {
                     .build();
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() == 404) {
-                // Index doesn't exist — create it with mapping
+                // Index doesn't exist - create it with mapping
                 String mapping = "{" +
                         "  \"settings\": {" +
                         "    \"analysis\": {" +
@@ -128,7 +128,7 @@ public class PostSearchService {
     /**
      * Index a single post into Elasticsearch.
      */
-    public void indexPost(BbsPost post) {
+    public void indexPost(VibePost post) {
         if (!esAvailable) return;
         try {
             String docJson = buildPostDocument(post);
@@ -238,11 +238,11 @@ public class PostSearchService {
     /**
      * Bulk index a list of posts.
      */
-    public void bulkIndex(List<BbsPost> posts) {
+    public void bulkIndex(List<VibePost> posts) {
         if (!esAvailable || posts == null || posts.isEmpty()) return;
         try {
             StringBuilder bulkBody = new StringBuilder();
-            for (BbsPost post : posts) {
+            for (VibePost post : posts) {
                 bulkBody.append("{\"index\":{\"_index\":\"").append(INDEX_NAME)
                         .append("\",\"_id\":").append(post.getId()).append("}}\n");
                 bulkBody.append(buildPostDocument(post)).append("\n");
@@ -273,7 +273,7 @@ public class PostSearchService {
     //  Internal helpers
     // ================================================
 
-    private String buildPostDocument(BbsPost post) {
+    private String buildPostDocument(VibePost post) {
         try {
             Map<String, Object> doc = new LinkedHashMap<>();
             doc.put("id", post.getId());

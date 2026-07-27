@@ -1,17 +1,19 @@
 package com.nexus.campus.controller;
 
 import com.nexus.campus.dto.ApiResponse;
+import com.nexus.campus.dto.AuditRequest;
 import com.nexus.campus.dto.PostPageVo;
-import com.nexus.campus.entity.BbsPost;
-import com.nexus.campus.entity.BbsComment;
+import com.nexus.campus.entity.VibePost;
+import com.nexus.campus.entity.VibeComment;
 import com.nexus.campus.entity.SysUser;
-import com.nexus.campus.service.BbsPostService;
-import com.nexus.campus.mapper.BbsPostMapper;
-import com.nexus.campus.mapper.BbsCommentMapper;
+import com.nexus.campus.service.VibePostService;
+import com.nexus.campus.mapper.VibePostMapper;
+import com.nexus.campus.mapper.VibeCommentMapper;
 import com.nexus.campus.mapper.SysUserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -21,53 +23,89 @@ import java.util.HashMap;
 public class AdminController {
 
     @Autowired
-    private BbsPostService bbsPostService;
+    private VibePostService vibePostService;
 
     @Autowired
     private SysUserMapper sysUserMapper;
 
     @Autowired
-    private BbsPostMapper bbsPostMapper;
+    private VibePostMapper vibePostMapper;
 
     @Autowired
-    private BbsCommentMapper bbsCommentMapper;
+    private VibeCommentMapper vibeCommentMapper;
+
+    @GetMapping("/pending-posts")
+    public ApiResponse<List<PostPageVo>> getPendingPosts(@RequestAttribute("currentRole") String role) {
+        ApiResponse check = checkAdmin(role);
+        if (check != null) return check;
+        List<PostPageVo> posts = vibePostService.getPendingAuditPosts();
+        if (posts == null) {
+            posts = Collections.emptyList();
+        }
+        return ApiResponse.success(posts);
+    }
+
+    @PostMapping("/audit/{id}")
+    public ApiResponse<Void> auditPost(
+            @PathVariable Long id,
+            @RequestBody AuditRequest request,
+            @RequestAttribute("currentRole") String role) {
+        ApiResponse check = checkAdmin(role);
+        if (check != null) return check;
+        if (request == null || request.getAction() == null) {
+            return ApiResponse.error(400, "Missing 'action' field.");
+        }
+        switch (request.getAction().toUpperCase()) {
+            case "APPROVED":
+                vibePostService.approvePost(id);
+                return ApiResponse.successMessage("Post approved and published.");
+            case "REJECTED":
+                vibePostService.rejectPost(id);
+                return ApiResponse.successMessage("Post rejected.");
+            default:
+                return ApiResponse.error(400, "Invalid action: " + request.getAction());
+        }
+    }
 
     @GetMapping("/stats")
     public ApiResponse<Map<String, Object>> getStats(@RequestAttribute("currentRole") String role) {
-        if (!"ADMIN".equals(role)) {
-            return ApiResponse.forbidden("Access denied. Admin privileges required.");
-        }
+        ApiResponse check = checkAdmin(role);
+        if (check != null) return check;
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalUsers", sysUserMapper.selectCount(null));
-        stats.put("totalPosts", bbsPostMapper.selectCount(null));
-        stats.put("totalComments", bbsCommentMapper.selectCount(null));
-        stats.put("pendingAudit", bbsPostMapper.selectPendingAuditPosts().size());
+        stats.put("totalPosts", vibePostMapper.selectCount(null));
+        stats.put("totalComments", vibeCommentMapper.selectCount(null));
+        stats.put("pendingAudit", vibePostMapper.selectPendingAuditPosts().size());
         return ApiResponse.success(stats);
     }
 
     @GetMapping("/audit/posts")
     public ApiResponse<List<PostPageVo>> getPendingAuditPosts(@RequestAttribute("currentRole") String role) {
-        if (!"ADMIN".equals(role)) {
-            return ApiResponse.forbidden("Access denied. Admin privileges required.");
-        }
-        return ApiResponse.success(bbsPostService.getPendingAuditPosts());
+        ApiResponse check = checkAdmin(role);
+        if (check != null) return check;
+        return ApiResponse.success(vibePostService.getPendingAuditPosts());
     }
 
     @PostMapping("/audit/posts/{id}/approve")
     public ApiResponse<Void> approvePost(@PathVariable Long id, @RequestAttribute("currentRole") String role) {
-        if (!"ADMIN".equals(role)) {
-            return ApiResponse.forbidden("Access denied.");
-        }
-        bbsPostService.approvePost(id);
+        ApiResponse check = checkAdmin(role);
+        if (check != null) return check;
+        vibePostService.approvePost(id);
         return ApiResponse.successMessage("Post approved and published.");
     }
 
     @PostMapping("/audit/posts/{id}/reject")
     public ApiResponse<Void> rejectPost(@PathVariable Long id, @RequestAttribute("currentRole") String role) {
+        ApiResponse check = checkAdmin(role);
+        if (check != null) return check;
+        vibePostService.rejectPost(id);
+       return ApiResponse.successMessage("Post rejected.");
+   }
+
+    private ApiResponse checkAdmin(String role) {
         if (!"ADMIN".equals(role)) {
-            return ApiResponse.forbidden("Access denied.");
+            return ApiResponse.forbidden("Access denied. Admin privileges required.");
         }
-        bbsPostService.rejectPost(id);
-        return ApiResponse.successMessage("Post rejected.");
+        return null;
     }
 }

@@ -1,8 +1,8 @@
 package com.nexus.campus.controller;
 
 import com.nexus.campus.dto.ApiResponse;
-import com.nexus.campus.entity.BbsTag;
-import com.nexus.campus.service.BbsTagService;
+import com.nexus.campus.entity.VibeTag;
+import com.nexus.campus.service.VibeTagService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,15 +16,15 @@ import java.util.List;
 public class TagController {
 
     @Autowired
-    private BbsTagService bbsTagService;
+    private VibeTagService vibeTagService;
 
     @GetMapping
-    public ApiResponse<List<BbsTag>> getTags() {
-        return ApiResponse.success(bbsTagService.getActiveTags());
+    public ApiResponse<List<VibeTag>> getTags() {
+        return ApiResponse.success(vibeTagService.getActiveTags());
     }
 
     @GetMapping("/post")
-    public ApiResponse<List<BbsTag>> getTagsByPostId(@RequestParam Long postId) {
-        return ApiResponse.success(bbsTagService.getTagsByPostId(postId));
+    public ApiResponse<List<VibeTag>> getTagsByPostId(@RequestParam Long postId) {
+        return ApiResponse.success(vibeTagService.getTagsByPostId(postId));
     }
 }

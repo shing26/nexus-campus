@@ -4,10 +4,10 @@ import com.nexus.campus.dto.ApiResponse;
 import com.nexus.campus.dto.PostPageVo;
 import com.nexus.campus.dto.StatsResponse;
 import com.nexus.campus.dto.UserPublicVo;
-import com.nexus.campus.entity.BbsPost;
+import com.nexus.campus.entity.VibePost;
 import com.nexus.campus.entity.SysUser;
-import com.nexus.campus.mapper.BbsCommentMapper;
-import com.nexus.campus.mapper.BbsPostMapper;
+import com.nexus.campus.mapper.VibeCommentMapper;
+import com.nexus.campus.mapper.VibePostMapper;
 import com.nexus.campus.mapper.SysUserMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +24,10 @@ import java.util.stream.Collectors;
 public class StatsController {
 
     @Autowired
-    private BbsPostMapper bbsPostMapper;
+    private VibePostMapper vibePostMapper;
 
     @Autowired
-    private BbsCommentMapper bbsCommentMapper;
+    private VibeCommentMapper vibeCommentMapper;
 
     @Autowired
     private SysUserMapper sysUserMapper;
@@ -36,16 +36,16 @@ public class StatsController {
     public ApiResponse<StatsResponse> getOverview() {
         StatsResponse stats = new StatsResponse();
         stats.setTotalUsers(sysUserMapper.selectCount(null));
-        stats.setTotalPosts(bbsPostMapper.selectCount(null));
-        stats.setTotalComments(bbsCommentMapper.countTotalComments());
-        stats.setTodayPosts(bbsPostMapper.countTodayPosts());
+        stats.setTotalPosts(vibePostMapper.selectCount(null));
+        stats.setTotalComments(vibeCommentMapper.countTotalComments());
+        stats.setTodayPosts(vibePostMapper.countTodayPosts());
         return ApiResponse.success(stats);
     }
 
     @GetMapping("/hot-posts")
     public ApiResponse<List<PostPageVo>> getHotPosts(
             @RequestParam(defaultValue = "10") int limit) {
-        List<BbsPost> posts = bbsPostMapper.selectTopLikedPosts(limit);
+        List<VibePost> posts = vibePostMapper.selectTopLikedPosts(limit);
         List<PostPageVo> vos = posts.stream().map(this::convertToVo).collect(Collectors.toList());
         return ApiResponse.success(vos);
     }
@@ -58,7 +58,7 @@ public class StatsController {
         return ApiResponse.success(vos);
     }
 
-    private PostPageVo convertToVo(BbsPost post) {
+    private PostPageVo convertToVo(VibePost post) {
         PostPageVo vo = new PostPageVo();
         BeanUtils.copyProperties(post, vo);
         return vo;

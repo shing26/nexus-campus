@@ -1,0 +1,3 @@
+﻿# 0002 — AI Agent review: code-only trigger, dual display
+
+The AI Agent review is triggered only for posts containing code blocks (fenced `), not for all posts. This reduces LLM API cost and avoids unnecessary latency on pure-text discussions. The response is a structured Markdown review with four sections: overall score, code quality, security concerns, and optimization suggestions. The review is displayed in two complementary ways: an AI Agent auto-reply (full content, visible in the comment thread) and a small badge/pill on the post detail page showing the summary score. This dual approach gives users both context-rich feedback and an at-a-glance quality signal without needing to scroll to comments.

@@ -24,4 +24,13 @@ public class PostPageVo implements Serializable {
     private Integer status;
     private LocalDateTime createTime;
     private String[] tags;
+    
+    /** Safety check severity from ai_review_log: critical, high, low, none, or null */
+    private String safetySeverity;
+    
+    /** LLM classification: Prompt injection, Harmful content, Spam, Safe, or null */
+    private String safetyClassification;
+    
+    /** Whether the safety check approved the post: 1 = clean/approved, 0 = flagged, null = unchecked */
+    private Integer safetyIsApproved;
 }

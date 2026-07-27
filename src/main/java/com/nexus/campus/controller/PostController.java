@@ -4,8 +4,10 @@ import com.nexus.campus.dto.ApiResponse;
 import com.nexus.campus.dto.PageResult;
 import com.nexus.campus.dto.PostCreateRequest;
 import com.nexus.campus.dto.PostPageVo;
-import com.nexus.campus.entity.BbsPost;
-import com.nexus.campus.service.BbsPostService;
+import com.nexus.campus.entity.Channel;
+import com.nexus.campus.entity.VibePost;
+import com.nexus.campus.service.ChannelService;
+import com.nexus.campus.service.VibePostService;
 import com.nexus.campus.service.LikeCounterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Collections;
 import java.util.Map;
 
 @RestController
@@ -20,14 +23,17 @@ import java.util.Map;
 public class PostController {
 
     @Autowired
-    private BbsPostService bbsPostService;
+    private ChannelService channelService;
+
+    @Autowired
+    private VibePostService vibePostService;
 
     @Autowired
     private LikeCounterService likeCounterService;
  
     @PostMapping("/{id}/pin")
     public ApiResponse<Void> pinPost(@PathVariable Long id) {
-        boolean success = bbsPostService.pinPost(id);
+        boolean success = vibePostService.pinPost(id);
         if (!success) {
             return ApiResponse.notFound("Post not found or cannot be pinned.");
         }
@@ -36,7 +42,7 @@ public class PostController {
  
     @PostMapping("/{id}/unpin")
     public ApiResponse<Void> unpinPost(@PathVariable Long id) {
-        boolean success = bbsPostService.unpinPost(id);
+        boolean success = vibePostService.unpinPost(id);
         if (!success) {
             return ApiResponse.notFound("Post not found.");
         }
@@ -47,7 +53,7 @@ public class PostController {
     public ApiResponse<Map<String, Object>> createPost(
             @Valid @RequestBody PostCreateRequest request,
             @RequestAttribute("currentUserId") Long userId) {
-        BbsPost post = bbsPostService.createPost(request, userId);
+        VibePost post = vibePostService.createPost(request, userId);
         Map<String, Object> data = new HashMap<>();
         data.put("postId", post.getId().toString());
         data.put("status", post.getStatus());
@@ -62,19 +68,27 @@ public class PostController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) String channelSlug,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "false") boolean hot) {
         if (hot) {
-            List<PostPageVo> hotPosts = bbsPostService.getHotPosts(size);
+            List<PostPageVo> hotPosts = vibePostService.getHotPosts(size);
             return ApiResponse.success(PageResult.of(page, size, hotPosts.size(), hotPosts));
         }
         PageResult<PostPageVo> result;
-        if (keyword != null && !keyword.isEmpty()) {
-            result = bbsPostService.searchPosts(keyword, page, size);
+        if (channelSlug != null && !channelSlug.isEmpty()) {
+            Channel channel = channelService.getBySlug(channelSlug);
+            if (channel == null) {
+                result = PageResult.of(page, size, 0, Collections.emptyList());
+            } else {
+                result = vibePostService.getPostsByCategory(channel.getId(), page, size);
+            }
+        } else if (keyword != null && !keyword.isEmpty()) {
+            result = vibePostService.searchPosts(keyword, page, size);
         } else if (categoryId != null) {
-            result = bbsPostService.getPostsByCategory(categoryId, page, size);
+            result = vibePostService.getPostsByCategory(categoryId, page, size);
         } else {
-            result = bbsPostService.getActivePosts(page, size);
+            result = vibePostService.getActivePosts(page, size);
         }
         return ApiResponse.success(result);
     }
@@ -82,14 +96,14 @@ public class PostController {
     @GetMapping("/hot")
     public ApiResponse<List<PostPageVo>> getHotPosts(
             @RequestParam(defaultValue = "10") int limit) {
-        List<PostPageVo> posts = bbsPostService.getHotPosts(limit);
+        List<PostPageVo> posts = vibePostService.getHotPosts(limit);
         return ApiResponse.success(posts);
     }
 
     @GetMapping("/{id}")
     public ApiResponse<PostPageVo> getPostDetail(@PathVariable Long id) {
-        bbsPostService.incrementView(id);
-        PostPageVo post = bbsPostService.getPostDetail(id);
+        vibePostService.incrementView(id);
+        PostPageVo post = vibePostService.getPostDetail(id);
         if (post == null) {
             return ApiResponse.notFound("Post not found.");
         }
@@ -107,3 +121,5 @@ public class PostController {
         return ApiResponse.success("Energy increment synchronized.", data);
     }
 }
+
+

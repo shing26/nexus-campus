@@ -18,10 +18,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Full integration tests for {@link PostController}.
+ * Full integration tests for {@link PostController} and channel API.
  *
  * <p>Tests post listing, detail retrieval, creation (with JWT auth),
- * and liking. Uses the seed data from data.sql.</p>
+ * liking, and the channel slug API. Uses the seed data from data.sql.</p>
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -38,10 +38,10 @@ class PostControllerIntegrationTest {
 
     private String authToken;
     private static final String POSTS_URL = "/api/v1/posts";
+    private static final String CHANNELS_URL = "/api/v1/channels";
 
     @BeforeEach
     void setUp() {
-        // Generate a valid JWT for the seed user (id=2, "testuser", "USER")
         authToken = jwtUtil.generateToken(2L, "testuser", "USER");
     }
 
@@ -70,14 +70,14 @@ class PostControllerIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/posts/{id} should return post detail")
     void getPostDetail_shouldReturnPost() throws Exception {
-        long existingPostId = 17921094810291L;
+        long existingPostId = 1L;
 
         mockMvc.perform(get(POSTS_URL + "/" + existingPostId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(200)))
                 .andExpect(jsonPath("$.data.id", is(notNullValue())))
                 .andExpect(jsonPath("$.data.title", notNullValue()))
-                .andExpect(jsonPath("$.data.authorName", is("Test User")))
+                .andExpect(jsonPath("$.data.authorName", is("shing")))
                 .andExpect(jsonPath("$.data.categoryName", notNullValue()));
     }
 
@@ -128,7 +128,7 @@ class PostControllerIntegrationTest {
     @Test
     @DisplayName("POST /api/v1/posts/{id}/like with valid JWT should increment likes")
     void likePost_withValidToken_shouldSucceed() throws Exception {
-        long existingPostId = 17921094810293L;
+        long existingPostId = 3L;
 
         mockMvc.perform(post(POSTS_URL + "/" + existingPostId + "/like")
                         .header("Authorization", "Bearer " + authToken))
@@ -141,11 +141,47 @@ class PostControllerIntegrationTest {
     @Test
     @DisplayName("POST /api/v1/posts/{id}/like without JWT should return 401")
     void likePost_withoutToken_shouldReturn401() throws Exception {
-        long existingPostId = 17921094810293L;
+        long existingPostId = 3L;
 
         mockMvc.perform(post(POSTS_URL + "/" + existingPostId + "/like"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code", is(401)))
                 .andExpect(jsonPath("$.message", containsString("Authentication required")));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/channels should return all 7 channels with slugs")
+    void getAllChannels_shouldReturnAllChannels() throws Exception {
+        mockMvc.perform(get(CHANNELS_URL))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)))
+                .andExpect(jsonPath("$.data", hasSize(7)))
+                .andExpect(jsonPath("$.data[0].slug", is("announcements")))
+                .andExpect(jsonPath("$.data[1].slug", is("prompts")))
+                .andExpect(jsonPath("$.data[2].slug", is("showcase")))
+                .andExpect(jsonPath("$.data[3].slug", is("agents")))
+                .andExpect(jsonPath("$.data[4].slug", is("vibe-coding")))
+                .andExpect(jsonPath("$.data[5].slug", is("debug")))
+                .andExpect(jsonPath("$.data[6].slug", is("resources")));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/posts?channelSlug=prompts should filter by channel slug")
+    void getPosts_byChannelSlug_shouldReturnFilteredList() throws Exception {
+        mockMvc.perform(get(POSTS_URL)
+                        .param("channelSlug", "prompts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)))
+                .andExpect(jsonPath("$.data.list", is(not(empty()))));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/posts?channelSlug=nonexistent should return empty result")
+    void getPosts_byNonexistentChannelSlug_shouldReturnEmpty() throws Exception {
+        mockMvc.perform(get(POSTS_URL)
+                        .param("channelSlug", "nonexistent"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)))
+                .andExpect(jsonPath("$.data.list", is(empty())));
     }
 }

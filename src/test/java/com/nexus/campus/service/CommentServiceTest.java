@@ -1,12 +1,12 @@
 package com.nexus.campus.service;
 
 import com.nexus.campus.dto.CommentCreateRequest;
-import com.nexus.campus.entity.BbsComment;
-import com.nexus.campus.entity.BbsPost;
+import com.nexus.campus.entity.VibeComment;
+import com.nexus.campus.entity.VibePost;
 import com.nexus.campus.entity.SysMessage;
 import com.nexus.campus.entity.SysUser;
 import com.nexus.campus.mapper.*;
-import com.nexus.campus.service.impl.BbsCommentServiceImpl;
+import com.nexus.campus.service.impl.VibeCommentServiceImpl;
 import com.nexus.campus.util.DfaFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,10 +28,10 @@ import static org.mockito.Mockito.*;
 class CommentServiceTest {
 
     @Mock
-    private BbsCommentMapper bbsCommentMapper;
+    private VibeCommentMapper vibeCommentMapper;
 
     @Mock
-    private BbsPostMapper bbsPostMapper;
+    private VibePostMapper vibePostMapper;
 
     @Mock
     private SysUserMapper sysUserMapper;
@@ -43,18 +43,18 @@ class CommentServiceTest {
     private DfaFilter dfaFilter;
 
     @InjectMocks
-    private BbsCommentServiceImpl commentService;
+    private VibeCommentServiceImpl commentService;
 
     private final Long postId = 42L;
     private final Long userId = 100L;
     private final Long authorUserId = 200L;
 
-    private BbsPost post;
+    private VibePost post;
     private SysUser user;
 
     @BeforeEach
     void setUp() {
-        post = new BbsPost();
+        post = new VibePost();
         post.setId(postId);
         post.setUserId(authorUserId);
         post.setTitle("Test Post");
@@ -79,25 +79,25 @@ class CommentServiceTest {
         request.setTargetId(0L);
 
         when(dfaFilter.containsSensitiveWord("Great post!")).thenReturn(false);
-        when(bbsPostMapper.selectById(postId)).thenReturn(post);
+        when(vibePostMapper.selectById(postId)).thenReturn(post);
         when(sysUserMapper.selectById(userId)).thenReturn(user);
 
-        BbsComment result = commentService.createComment(request, userId);
+        VibeComment result = commentService.createComment(request, userId);
 
         assertNotNull(result);
         assertEquals(1, result.getStatus());
 
-        ArgumentCaptor<BbsComment> commentCaptor = ArgumentCaptor.forClass(BbsComment.class);
-        verify(bbsCommentMapper).insert(commentCaptor.capture());
-        BbsComment saved = commentCaptor.getValue();
+        ArgumentCaptor<VibeComment> commentCaptor = ArgumentCaptor.forClass(VibeComment.class);
+        verify(vibeCommentMapper).insert(commentCaptor.capture());
+        VibeComment saved = commentCaptor.getValue();
         assertEquals(postId, saved.getPostId());
         assertEquals(userId, saved.getUserId());
         assertEquals(0L, saved.getParentId());
         assertEquals("Great post!", saved.getContent());
 
         // Post comment count should be incremented
-        ArgumentCaptor<BbsPost> postCaptor = ArgumentCaptor.forClass(BbsPost.class);
-        verify(bbsPostMapper, times(1)).updateById(postCaptor.capture());
+        ArgumentCaptor<VibePost> postCaptor = ArgumentCaptor.forClass(VibePost.class);
+        verify(vibePostMapper, times(1)).updateById(postCaptor.capture());
         assertEquals(6, postCaptor.getValue().getCommentCount());
 
         // Notification should be sent to post author
@@ -119,7 +119,7 @@ class CommentServiceTest {
         request.setTargetId(0L);
 
         when(dfaFilter.containsSensitiveWord("My own post comment")).thenReturn(false);
-        when(bbsPostMapper.selectById(postId)).thenReturn(post);
+        when(vibePostMapper.selectById(postId)).thenReturn(post);
         when(sysUserMapper.selectById(userId)).thenReturn(user);
 
         commentService.createComment(request, userId);
@@ -141,15 +141,15 @@ class CommentServiceTest {
         request.setTargetId(0L);
 
         when(dfaFilter.containsSensitiveWord("This is a shit comment")).thenReturn(true);
-        when(bbsPostMapper.selectById(postId)).thenReturn(post);
+        when(vibePostMapper.selectById(postId)).thenReturn(post);
         when(sysUserMapper.selectById(userId)).thenReturn(user);
 
-        BbsComment result = commentService.createComment(request, userId);
+        VibeComment result = commentService.createComment(request, userId);
 
         assertEquals(2, result.getStatus()); // PENDING_AUDIT
 
-        ArgumentCaptor<BbsComment> captor = ArgumentCaptor.forClass(BbsComment.class);
-        verify(bbsCommentMapper).insert((BbsComment) captor.capture());
+        ArgumentCaptor<VibeComment> captor = ArgumentCaptor.forClass(VibeComment.class);
+        verify(vibeCommentMapper).insert((VibeComment) captor.capture());
         assertEquals(2, captor.getValue().getStatus());
     }
 
@@ -162,14 +162,14 @@ class CommentServiceTest {
         // parentId and targetId are null
 
         when(dfaFilter.containsSensitiveWord("Comment with null IDs")).thenReturn(false);
-        when(bbsPostMapper.selectById(postId)).thenReturn(post);
+        when(vibePostMapper.selectById(postId)).thenReturn(post);
         when(sysUserMapper.selectById(userId)).thenReturn(user);
 
         commentService.createComment(request, userId);
 
-        ArgumentCaptor<BbsComment> captor = ArgumentCaptor.forClass(BbsComment.class);
-        verify(bbsCommentMapper).insert((BbsComment) captor.capture());
-        BbsComment saved = captor.getValue();
+        ArgumentCaptor<VibeComment> captor = ArgumentCaptor.forClass(VibeComment.class);
+        verify(vibeCommentMapper).insert((VibeComment) captor.capture());
+        VibeComment saved = captor.getValue();
         assertEquals(0L, saved.getParentId());
         assertEquals(0L, saved.getTargetId());
     }
@@ -181,13 +181,13 @@ class CommentServiceTest {
     @Test
     @DisplayName("getCommentsByPostId() should return comments in ascending order")
     void getCommentsByPostId() {
-        BbsComment c1 = new BbsComment(); c1.setId(1L); c1.setPostId(postId); c1.setContent("First");
-        BbsComment c2 = new BbsComment(); c2.setId(2L); c2.setPostId(postId); c2.setContent("Second");
-        List<BbsComment> comments = Arrays.asList(c1, c2);
+        VibeComment c1 = new VibeComment(); c1.setId(1L); c1.setPostId(postId); c1.setContent("First");
+        VibeComment c2 = new VibeComment(); c2.setId(2L); c2.setPostId(postId); c2.setContent("Second");
+        List<VibeComment> comments = Arrays.asList(c1, c2);
 
-        when(bbsCommentMapper.selectCommentsByPostId(postId)).thenReturn(comments);
+        when(vibeCommentMapper.selectCommentsByPostId(postId)).thenReturn(comments);
 
-        List<BbsComment> result = commentService.getCommentsByPostId(postId);
+        List<VibeComment> result = commentService.getCommentsByPostId(postId);
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -198,9 +198,9 @@ class CommentServiceTest {
     @Test
     @DisplayName("getCommentsByPostId() should return empty list when no comments exist")
     void getCommentsByPostIdEmpty() {
-        when(bbsCommentMapper.selectCommentsByPostId(postId)).thenReturn(List.of());
+        when(vibeCommentMapper.selectCommentsByPostId(postId)).thenReturn(List.of());
 
-        List<BbsComment> result = commentService.getCommentsByPostId(postId);
+        List<VibeComment> result = commentService.getCommentsByPostId(postId);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -213,7 +213,7 @@ class CommentServiceTest {
     @Test
     @DisplayName("countCommentsByPostId() should return the count from mapper")
     void countCommentsByPostId() {
-        when(bbsCommentMapper.countCommentsByPostId(postId)).thenReturn(8);
+        when(vibeCommentMapper.countCommentsByPostId(postId)).thenReturn(8);
 
         int count = commentService.countCommentsByPostId(postId);
 
@@ -223,7 +223,7 @@ class CommentServiceTest {
     @Test
     @DisplayName("deleteComment() should return true when deletion succeeds")
     void deleteCommentSuccess() {
-        when(bbsCommentMapper.deleteById(1L)).thenReturn(1);
+        when(vibeCommentMapper.deleteById(1L)).thenReturn(1);
 
         boolean result = commentService.deleteComment(1L);
 
@@ -233,7 +233,7 @@ class CommentServiceTest {
     @Test
     @DisplayName("deleteComment() should return false when comment does not exist")
     void deleteCommentNotFound() {
-        when(bbsCommentMapper.deleteById(999L)).thenReturn(0);
+        when(vibeCommentMapper.deleteById(999L)).thenReturn(0);
 
         boolean result = commentService.deleteComment(999L);
 

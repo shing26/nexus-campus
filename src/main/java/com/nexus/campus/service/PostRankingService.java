@@ -3,8 +3,8 @@ package com.nexus.campus.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.nexus.campus.dto.PageResult;
 import com.nexus.campus.dto.PostPageVo;
-import com.nexus.campus.entity.BbsPost;
-import com.nexus.campus.mapper.BbsPostMapper;
+import com.nexus.campus.entity.VibePost;
+import com.nexus.campus.mapper.VibePostMapper;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +50,7 @@ public class PostRankingService {
     private StringRedisTemplate stringRedisTemplate;
 
     @Autowired
-    private BbsPostMapper bbsPostMapper;
+    private VibePostMapper vibePostMapper;
 
     private boolean redisAvailable;
 
@@ -139,11 +139,11 @@ public class PostRankingService {
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime cutoff = now.minusDays(RECALCULATION_DAYS);
 
-            List<BbsPost> posts = bbsPostMapper.selectList(
-                    new LambdaQueryWrapper<BbsPost>()
-                            .eq(BbsPost::getStatus, 1)
-                            .ge(BbsPost::getCreateTime, cutoff)
-                            .orderByDesc(BbsPost::getCreateTime)
+            List<VibePost> posts = vibePostMapper.selectList(
+                    new LambdaQueryWrapper<VibePost>()
+                            .eq(VibePost::getStatus, 1)
+                            .ge(VibePost::getCreateTime, cutoff)
+                            .orderByDesc(VibePost::getCreateTime)
             );
 
             if (posts == null || posts.isEmpty()) {
@@ -156,7 +156,7 @@ public class PostRankingService {
             ZSetOperations<String, String> zset = stringRedisTemplate.opsForZSet();
 
             int count = 0;
-            for (BbsPost post : posts) {
+            for (VibePost post : posts) {
                 double score = computeGravityScore(post, now);
                 if (score > 0) {
                     zset.add(RANKING_KEY, post.getId().toString(), score);
@@ -174,7 +174,7 @@ public class PostRankingService {
     //  Gravity-decay formula
     // =================================================
 
-    static double computeGravityScore(BbsPost post, LocalDateTime now) {
+    static double computeGravityScore(VibePost post, LocalDateTime now) {
         long likeCount    = post.getLikeCount() != null ? post.getLikeCount() : 0;
         long commentCount = post.getCommentCount() != null ? post.getCommentCount() : 0;
         long viewCount    = post.getViewCount() != null ? post.getViewCount() : 0;
@@ -193,17 +193,17 @@ public class PostRankingService {
     private List<PostPageVo> fetchAndOrderByIds(List<Long> postIds) {
         if (postIds.isEmpty()) return List.of();
 
-        List<BbsPost> posts = bbsPostMapper.selectByIdsOrdered(postIds);
+        List<VibePost> posts = vibePostMapper.selectByIdsOrdered(postIds);
         if (posts == null || posts.isEmpty()) return List.of();
 
         // Preserve order from postIds (which is the Redis rank order)
-        java.util.Map<Long, BbsPost> map = new java.util.HashMap<>();
-        for (BbsPost p : posts) {
+        java.util.Map<Long, VibePost> map = new java.util.HashMap<>();
+        for (VibePost p : posts) {
             map.put(p.getId(), p);
         }
-        List<BbsPost> ordered = new java.util.ArrayList<>();
+        List<VibePost> ordered = new java.util.ArrayList<>();
         for (Long id : postIds) {
-            BbsPost p = map.get(id);
+            VibePost p = map.get(id);
             if (p != null) {
                 ordered.add(p);
             }
@@ -215,10 +215,10 @@ public class PostRankingService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime cutoff = now.minusDays(RECALCULATION_DAYS);
 
-        List<BbsPost> allPosts = bbsPostMapper.selectList(
-                new LambdaQueryWrapper<BbsPost>()
-                        .eq(BbsPost::getStatus, 1)
-                        .ge(BbsPost::getCreateTime, cutoff)
+        List<VibePost> allPosts = vibePostMapper.selectList(
+                new LambdaQueryWrapper<VibePost>()
+                        .eq(VibePost::getStatus, 1)
+                        .ge(VibePost::getCreateTime, cutoff)
         );
 
         if (allPosts == null || allPosts.isEmpty()) {
@@ -227,7 +227,7 @@ public class PostRankingService {
 
         // Compute gravity-decay scores and sort
         List<ScoredPost> scored = new ArrayList<>();
-        for (BbsPost p : allPosts) {
+        for (VibePost p : allPosts) {
             double score = computeGravityScore(p, now);
             scored.add(new ScoredPost(p, score));
         }
@@ -248,7 +248,7 @@ public class PostRankingService {
         return PageResult.of(page, size, scored.size(), vos);
     }
 
-    private PostPageVo convertToPageVo(BbsPost post) {
+    private PostPageVo convertToPageVo(VibePost post) {
         PostPageVo vo = new PostPageVo();
         BeanUtils.copyProperties(post, vo);
         return vo;
@@ -256,7 +256,7 @@ public class PostRankingService {
 
     /**
      * Update a post's ZSET score when a like event occurs (backward-compatible).
-     * Called by deprecated {@code BbsPostServiceImpl.likePost}.
+     * Called by deprecated {@code VibePostServiceImpl.likePost}.
      */
     public void onLike(Long postId, long currentLikeCount) {
         if (!redisAvailable) return;
@@ -267,5 +267,5 @@ public class PostRankingService {
         }
     }
 
-    private record ScoredPost(BbsPost post, double score) {}
+    private record ScoredPost(VibePost post, double score) {}
 }
