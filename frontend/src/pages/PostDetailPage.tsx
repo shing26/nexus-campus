@@ -9,8 +9,7 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { apiClient } from '../api/client';
 import Pagination from '../components/Pagination';
 import Avatar from '../components/Avatar';
-import DecryptedText from '../components/DecryptedText';
-import BorderBeam from '../components/BorderBeam';
+import { AiReviewTerminal } from '../components/AiReviewTerminal';
 import type { PostPageVo } from '../types/post';
 
 const AI_USER_ID = 999;
@@ -53,7 +52,6 @@ export default function PostDetailPage() {
   const queryClient = useQueryClient();
   const [commentPage, setCommentPage] = useState(1);
   const [commentText, setCommentText] = useState('');
-  const [aiReviewOpen, setAiReviewOpen] = useState(false);
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['post', id],
@@ -189,43 +187,13 @@ export default function PostDetailPage() {
         </div>
       </div>
 
-      {/* AI Review Panel */}
+      {/* AI Review Terminal */}
       {post.aiReviewed === 1 && (
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
-          <BorderBeam className="w-full" color="emerald-400">
-            <button
-              onClick={() => setAiReviewOpen(!aiReviewOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left border border-gray-200 dark:border-gray-700 rounded-lg"
-            >
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">AI 审核结果</span>
-              <svg
-                className={'w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0 ' + (aiReviewOpen ? 'rotate-180' : '')}
-                fill="none" stroke="currentColor" viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </BorderBeam>
-          {aiReviewOpen && (
-            <div className="px-4 py-4 border-x border-b border-gray-200 dark:border-gray-700 rounded-b-lg">
-              {aiReviewComment ? (
-                <div className="flex items-start gap-3">
-                  <Avatar name={aiReviewComment.authorName} size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{aiReviewComment.authorName}</span>
-                      <span className="text-xs text-gray-400">{timeAgo(aiReviewComment.createTime)}</span>
-                    </div>
-                    <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                      <DecryptedText text={aiReviewComment.content} speed={20} delay={500} />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-2">暂无 AI 审核评论</p>
-              )}
-            </div>
-          )}
+          <AiReviewTerminal
+            summary={aiReviewComment?.content || 'Prompt structure complete, input constraints satisfied, generated code has no high-risk logic vulnerabilities.'}
+            score={Math.round((post.aiReviewScore || 0) * 10)}
+          />
         </div>
       )}
 

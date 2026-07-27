@@ -1,9 +1,8 @@
 ﻿import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
 import type { PostPageVo } from '../types/post';
 import Avatar from './Avatar';
-import SpotlightCard from './SpotlightCard';
-import BorderBeam from './BorderBeam';
+import { SpotlightCard } from './ui/SpotlightCard';
+import { BorderBeam } from './ui/BorderBeam';
 
 interface PostCardProps {
   post: PostPageVo;
@@ -24,27 +23,33 @@ export default function PostCard({ post }: PostCardProps) {
     return new Date(dateStr).toLocaleDateString();
   };
 
-  const cardInner = (
-    <SpotlightCard>
-      <div className="flex items-start gap-3">
-        <Avatar name={post.authorName} size="md" />
-        <div className="flex-1 min-w-0">
-          <Link to={"/post/" + post.id} className="block">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors leading-snug">
-              {post.title}
-            </h3>
-          </Link>
-          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {post.authorName} · {post.categoryName} · {timeAgo(post.createTime)} · 💬 {post.commentCount} · 👁 {post.viewCount}
+  return (
+    <div className="relative">
+      {post.aiReviewed === 1 && <BorderBeam />}
+      <SpotlightCard>
+        <div className="flex items-start gap-3">
+          <Avatar name={post.authorName} size="md" />
+          <div className="flex-1 min-w-0">
+            <Link to={"/post/" + post.id} className="block">
+              <h3 className="text-base font-semibold text-slate-100 hover:text-vibe-cyan transition-colors leading-snug">
+                {post.title}
+              </h3>
+            </Link>
+            <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+              <span className="bg-vibe-cyan/10 border border-vibe-cyan/30 text-vibe-cyan font-mono text-xs rounded-md px-2.5 py-0.5">
+                {post.categoryName}
+              </span>
+              <span>{post.authorName}</span>
+              <span>·</span>
+              <span>{timeAgo(post.createTime)}</span>
+              <span>·</span>
+              <span>💬 {post.commentCount}</span>
+              <span>·</span>
+              <span>👁 {post.viewCount}</span>
+            </div>
           </div>
         </div>
-      </div>
-    </SpotlightCard>
-  );
-
-  return (
-    <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.15, ease: "easeOut" }} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
-      {post.aiReviewed === 1 ? <BorderBeam>{cardInner}</BorderBeam> : cardInner}
-    </motion.div>
+      </SpotlightCard>
+    </div>
   );
 }

@@ -1,9 +1,10 @@
 ﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
+import { Plus } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useThemeStore } from '../stores/themeStore';
-import ShimmerButton from './ShimmerButton';
+import { ShimmerButton } from './ui/ShimmerButton';
 
 const channels = [
   { slug: 'announcements', label: '公告' },
@@ -101,6 +102,12 @@ export default function Navbar() {
                   className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-emerald-600 transition-colors"
                 >
                   {user.username}
+                </Link>
+                <Link to="/post/new">
+                  <ShimmerButton className="!px-3 !py-1 text-xs">
+                    <Plus className="w-3 h-3" />
+                    New Vibe Post
+                  </ShimmerButton>
                 </Link>
                 <Link to="/create-post">
                   <ShimmerButton className="!px-3 !py-1 text-xs">
