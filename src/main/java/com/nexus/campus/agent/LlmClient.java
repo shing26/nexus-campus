@@ -84,4 +84,61 @@ public class LlmClient {
             return null;
         }
     }
+
+    /**
+     * Sends a chat completion with Structured Outputs (JSON Schema enforcement).
+     * The model is instructed to return valid JSON matching the provided schema.
+     *
+     * @param systemPrompt system-level instruction
+     * @param userContent  user message content
+     * @param schemaName   name for the JSON schema
+     * @param jsonSchema   a JsonNode representing the JSON Schema definition
+     * @return the assistant's response as a JsonNode (containing the parsed JSON), or null on failure
+     */
+    public JsonNode chatCompletionStructured(String systemPrompt, String userContent,
+                                              String schemaName, JsonNode jsonSchema) {
+        try {
+            ObjectNode requestBody = objectMapper.createObjectNode();
+            requestBody.put("model", model);
+
+            // Add response_format for structured outputs
+            ObjectNode responseFormat = requestBody.putObject("response_format");
+            responseFormat.put("type", "json_schema");
+            ObjectNode jsonSchemaWrapper = responseFormat.putObject("json_schema");
+            jsonSchemaWrapper.put("name", schemaName);
+            jsonSchemaWrapper.put("strict", true);
+            jsonSchemaWrapper.set("schema", jsonSchema);
+
+            ArrayNode messages = requestBody.putArray("messages");
+            ObjectNode systemMsg = messages.addObject();
+            systemMsg.put("role", "system");
+            systemMsg.put("content", systemPrompt);
+            ObjectNode userMsg = messages.addObject();
+            userMsg.put("role", "user");
+            userMsg.put("content", userContent);
+
+            String json = objectMapper.writeValueAsString(requestBody);
+
+            String response = restClient.post()
+                    .uri("/chat/completions")
+                    .body(json)
+                    .retrieve()
+                    .body(String.class);
+
+            if (response == null || response.isBlank()) return null;
+
+            JsonNode root = objectMapper.readTree(response);
+            String contentJson = root.path("choices").path(0).path("message").path("content").asText(null);
+            if (contentJson == null) {
+                log.warn("Structured response missing content: {}", response);
+                return null;
+            }
+            // The content is a JSON string; parse it
+            return objectMapper.readTree(contentJson);
+
+        } catch (Exception e) {
+            log.warn("LLM structured completion failed: {}", e.getMessage());
+            return null;
+        }
+    }
 }

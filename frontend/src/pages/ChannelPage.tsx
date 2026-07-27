@@ -1,10 +1,10 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import PostCard from '../components/PostCard';
 import Pagination from '../components/Pagination';
-import type { PostPageVo, Channel, PageResponse } from '../types/post';
+
 
 export default function ChannelPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -13,21 +13,21 @@ export default function ChannelPage() {
   const { data: channels } = useQuery({
     queryKey: ['channels'],
     queryFn: async () => {
-      const res = await apiClient.get<Channel[]>('/channels');
-      return res.data;
+      const res = await apiClient.get('/channels');
+      return res.data.data;
     },
     staleTime: 1000 * 60 * 10,
   });
 
-  const channel = channels?.find((c) => c.slug === slug);
+  const channel = channels?.find((c: any) => c.slug === slug);
 
   const { data: postsData, isLoading } = useQuery({
     queryKey: ['posts', 'channel', slug, page],
     queryFn: async () => {
-      const res = await apiClient.get<PageResponse<PostPageVo>>('/posts', {
+      const res = await apiClient.get('/posts', {
         params: { channelSlug: slug, page, size: 10 },
       });
-      return res.data;
+      return res.data.data;
     },
     enabled: !!slug && !!channel,
     staleTime: 1000 * 60 * 2,
@@ -71,10 +71,10 @@ export default function ChannelPage() {
             </div>
           ))}
         </div>
-      ) : postsData && postsData.records.length > 0 ? (
+      ) : postsData && postsData.list.length > 0 ? (
         <>
           <div className="space-y-4">
-            {postsData.records.map((post) => (
+            {postsData.list.map((post: any) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
@@ -90,3 +90,8 @@ export default function ChannelPage() {
     </div>
   );
 }
+
+
+
+
+

@@ -1,4 +1,4 @@
-﻿-- Clear old data
+-- Clear old data
 DELETE FROM sys_message;
 DELETE FROM vibe_comment;
 DELETE FROM vibe_post_tag;

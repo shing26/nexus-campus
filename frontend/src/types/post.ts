@@ -1,4 +1,4 @@
- export interface PostPageVo {
+﻿ export interface PostPageVo {
    id: number;
    title: string;
    content: string;
@@ -33,7 +33,7 @@
 }
  
  export interface PageResponse<T> {
-   records: T[];
+   list: T[];
    total: number;
    page: number;
    size: number;

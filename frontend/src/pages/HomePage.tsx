@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import PostCard from '../components/PostCard';
-import type { PostPageVo, PageResponse } from '../types/post';
+
 
 const heroChannels = [
   { slug: 'prompts', name: 'Prompts', description: 'Share and discover AI prompts', icon: '?', color: 'from-violet-500 to-purple-600' },
@@ -15,10 +15,10 @@ export default function HomePage() {
   const { data: hotPosts, isLoading: postsLoading } = useQuery({
     queryKey: ['posts', 'hot'],
     queryFn: async () => {
-      const res = await apiClient.get<PageResponse<PostPageVo>>('/posts', {
+      const res = await apiClient.get('/posts', {
         params: { hot: true, size: 20 },
       });
-      return res.data.records;
+      return res.data.data;
     },
     staleTime: 1000 * 60 * 2,
   });
@@ -72,7 +72,7 @@ export default function HomePage() {
             </div>
           ) : hotPosts && hotPosts.length > 0 ? (
             <div className="space-y-4">
-              {hotPosts.map((post) => (
+              {hotPosts.map((post: any) => (
                 <PostCard key={post.id} post={post} />
               ))}
             </div>
@@ -83,4 +83,8 @@ export default function HomePage() {
     </div>
   );
 }
+
+
+
+
 

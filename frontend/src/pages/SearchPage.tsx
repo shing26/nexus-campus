@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import PostCard from '../components/PostCard';
 import Pagination from '../components/Pagination';
-import type { PostPageVo, PageResponse } from '../types/post';
+
 
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
@@ -18,7 +18,7 @@ export default function SearchPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['posts', 'search', keyword, page],
     queryFn: async () => {
-      const res = await apiClient.get<PageResponse<PostPageVo>>('/posts', {
+      const res = await apiClient.get('/posts', {
         params: { keyword, page, size: 10 },
       });
       return res.data;
@@ -49,10 +49,10 @@ export default function SearchPage() {
             </div>
           ))}
         </div>
-      ) : data && data.records.length > 0 ? (
+      ) : data && data.list.length > 0 ? (
         <>
           <div className="space-y-4">
-            {data.records.map((post) => (
+            {data.list.map((post: any) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
@@ -68,3 +68,8 @@ export default function SearchPage() {
     </div>
   );
 }
+
+
+
+
+

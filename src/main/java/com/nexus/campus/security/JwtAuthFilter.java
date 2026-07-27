@@ -17,6 +17,8 @@ public class JwtAuthFilter implements Filter {
             "/api/v1/auth/register",
             "/api/v1/auth/refresh",
             "/api/v1/categories",
+            "/api/v1/channels",
+            "/api/v1/users",
             "/api/v1/tags",
             "/api/demo/",
             "/uploads/",
@@ -43,12 +45,13 @@ public class JwtAuthFilter implements Filter {
             return;
         }
 
-        if (("GET".equalsIgnoreCase(request.getMethod()))
-                && (path.startsWith("/api/v1/posts")
-                    || path.startsWith("/api/v1/comments/post/"))) {
-            chain.doFilter(request, response);
-            return;
-        }
+            if (("GET".equalsIgnoreCase(request.getMethod()))
+                    && (path.startsWith("/api/v1/posts")
+                        || path.startsWith("/api/v1/comments")
+                        || path.startsWith("/api/v1/channels"))) {
+                chain.doFilter(request, response);
+                return;
+            }
 
         String token = extractToken(request);
         if (token == null || !jwtUtil.validateToken(token)) {

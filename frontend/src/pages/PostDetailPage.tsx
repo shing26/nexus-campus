@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
@@ -7,7 +7,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { apiClient } from '../api/client';
 import Pagination from '../components/Pagination';
-import type { PostPageVo, Comment, PageResponse } from '../types/post';
+import type { PostPageVo } from '../types/post';
 
 const AI_USER_ID = 999;
 
@@ -104,8 +104,8 @@ export default function PostDetailPage() {
   const { data: post, isLoading } = useQuery({
     queryKey: ['post', id],
     queryFn: async () => {
-      const res = await apiClient.get<PostPageVo>('/posts/' + id);
-      return res.data;
+      const res = await apiClient.get('/posts/' + id);
+      return res.data.data;
     },
     enabled: !!id,
     staleTime: 1000 * 60,
@@ -115,10 +115,10 @@ export default function PostDetailPage() {
   const { data: allCommentsData } = useQuery({
     queryKey: ['comments', id, 'all'],
     queryFn: async () => {
-      const res = await apiClient.get<PageResponse<Comment>>('/posts/' + id + '/comments', {
+      const res = await apiClient.get('/posts/' + id + '/comments', {
         params: { page: 1, size: 100 },
       });
-      return res.data;
+      return res.data.data;
     },
     enabled: !!id && !!post && post.aiReviewed === 1,
     staleTime: 1000 * 30,
@@ -126,16 +126,16 @@ export default function PostDetailPage() {
 
   const aiReviewComment = useMemo(() => {
     if (!allCommentsData) return null;
-    return allCommentsData.records.find((c) => c.userId === AI_USER_ID) || null;
+    return allCommentsData.list.find((c: any) => c.userId === AI_USER_ID) || null;
   }, [allCommentsData]);
 
   const { data: commentsData } = useQuery({
     queryKey: ['comments', id, commentPage],
     queryFn: async () => {
-      const res = await apiClient.get<PageResponse<Comment>>('/posts/' + id + '/comments', {
+      const res = await apiClient.get('/posts/' + id + '/comments', {
         params: { page: commentPage, size: 10 },
       });
-      return res.data;
+      return res.data.data;
     },
     enabled: !!id,
     staleTime: 1000 * 30,
@@ -214,9 +214,9 @@ export default function PostDetailPage() {
         </div>
         <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-gray-500">
           <span className="font-medium text-gray-700">{post.authorName}</span>
-          <span className="text-gray-300">·</span>
+          <span className="text-gray-300">路</span>
           <span>{post.categoryName}</span>
-          <span className="text-gray-300">·</span>
+          <span className="text-gray-300">路</span>
           <span>{timeAgo(post.createTime)}</span>
         </div>
         <div className="flex items-center gap-4 mt-4">
@@ -293,7 +293,7 @@ export default function PostDetailPage() {
               <span className="text-sm font-semibold text-gray-700">AI Review Results</span>
               {aiReviewComment && (
                 <span className="text-xs text-gray-400 truncate hidden sm:inline">
-                  — {aiReviewComment.content}
+                  鈥?{aiReviewComment.content}
                 </span>
               )}
             </div>
@@ -361,10 +361,10 @@ export default function PostDetailPage() {
         </div>
 
         {/* Comment List */}
-        {commentsData && commentsData.records.length > 0 ? (
+        {commentsData && commentsData.list.length > 0 ? (
           <>
             <div className="space-y-4">
-              {commentsData.records.map((comment) => {
+              {commentsData.list.map((comment: any) => {
                 const isAiAgent = comment.userId === AI_USER_ID;
                 if (isAiAgent) {
                   return (
@@ -414,3 +414,8 @@ export default function PostDetailPage() {
     </article>
   );
 }
+
+
+
+
+
