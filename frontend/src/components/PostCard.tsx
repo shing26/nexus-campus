@@ -1,52 +1,66 @@
 ﻿import { Link } from 'react-router-dom';
 import type { PostPageVo } from '../types/post';
-import Avatar from './Avatar';
 import { SpotlightCard } from './ui/SpotlightCard';
 import { BorderBeam } from './ui/BorderBeam';
+import { Heart, MessageCircle, Eye } from 'lucide-react';
 
 interface PostCardProps {
   post: PostPageVo;
 }
 
+const SUMMARY_LENGTH = 80;
+
+function stripHtml(text: string): string {
+  return text?.replace(/<[^>]*>/g, '') ?? '';
+}
+
 export default function PostCard({ post }: PostCardProps) {
   const timeAgo = (dateStr: string) => {
-    const now = Date.now();
-    const date = new Date(dateStr).getTime();
-    const diff = now - date;
+    const diff = Date.now() - new Date(dateStr).getTime();
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return '刚刚';
-    if (minutes < 60) return minutes + '分钟前';
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return minutes + 'm ago';
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return hours + '小时前';
+    if (hours < 24) return hours + 'h ago';
     const days = Math.floor(hours / 24);
-    if (days < 30) return days + '天前';
+    if (days < 30) return days + 'd ago';
     return new Date(dateStr).toLocaleDateString();
   };
 
+  const scoreColor = post.aiReviewScore >= 80 ? 'text-vibe-emerald' : post.aiReviewScore >= 50 ? 'text-yellow-400' : 'text-red-400';
+  const shortSummary = stripHtml(post.summary || post.content).slice(0, SUMMARY_LENGTH);
+
   return (
     <div className="relative">
-      {post.aiReviewed === 1 && <BorderBeam />}
+      {post.aiReviewed === 1 && <BorderBeam size={150} duration={6} />}
       <SpotlightCard>
-        <div className="flex items-start gap-3">
-          <Avatar name={post.authorName} size="md" />
-          <div className="flex-1 min-w-0">
-            <Link to={"/post/" + post.id} className="block">
-              <h3 className="text-base font-semibold text-slate-100 hover:text-vibe-cyan transition-colors leading-snug">
-                {post.title}
-              </h3>
-            </Link>
-            <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
-              <span className="bg-vibe-cyan/10 border border-vibe-cyan/30 text-vibe-cyan font-mono text-xs rounded-md px-2.5 py-0.5">
-                {post.categoryName}
-              </span>
-              <span>{post.authorName}</span>
-              <span>·</span>
-              <span>{timeAgo(post.createTime)}</span>
-              <span>·</span>
-              <span>💬 {post.commentCount}</span>
-              <span>·</span>
-              <span>👁 {post.viewCount}</span>
-            </div>
+        <Link to={'/post/' + post.id} className="block">
+          {/* Title as code comment */}
+          <h3 className="font-mono text-sm text-slate-100 leading-snug hover:text-vibe-cyan transition-colors">
+            <span className="text-slate-500"># </span>{post.title}
+          </h3>
+          {/* Summary as code */}
+          {shortSummary && (
+            <p className="mt-1.5 font-mono text-[11px] text-slate-500 line-clamp-1">
+              // {shortSummary}...
+            </p>
+          )}
+        </Link>
+        {/* Metadata row */}
+        <div className="mt-2.5 flex items-center gap-3 text-[11px] font-mono">
+          <span className="bg-vibe-cyan/10 border border-vibe-cyan/30 text-vibe-cyan rounded-md px-2 py-0.5">
+            {post.categoryName}
+          </span>
+          {post.aiReviewed === 1 && (
+            <span className={'font-mono ' + scoreColor}>AI: {post.aiReviewScore}</span>
+          )}
+          <span className="text-slate-500">{post.authorName}</span>
+          <span className="text-slate-600">·</span>
+          <span className="text-slate-500">{timeAgo(post.createTime)}</span>
+          <div className="ml-auto flex items-center gap-2 text-slate-500">
+            <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{post.likeCount}</span>
+            <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" />{post.commentCount}</span>
+            <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{post.viewCount}</span>
           </div>
         </div>
       </SpotlightCard>
