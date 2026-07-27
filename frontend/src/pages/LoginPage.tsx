@@ -55,51 +55,35 @@ export default function LoginPage() {
   return (
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-10 h-10 rounded-lg bg-indigo-500 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <h1 className="text-xl font-bold text-slate-900">登录 Nexus-Vibe</h1>
-          <p className="text-sm text-slate-500 mt-1">欢迎回来</p>
-        </div>
+        <h1 className="text-lg font-bold text-gray-900 mb-6 text-center">登录</h1>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-4">
               {error}
             </div>
           )}
 
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-slate-700 mb-1">
-              用户名
-            </label>
+          <div className="mb-4">
             <input
               id="username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors placeholder-slate-400"
-              placeholder="输入用户名"
+              className="w-full px-0 py-2 text-sm border-0 border-b border-gray-200 text-gray-900 focus:outline-none focus:border-indigo-600 transition-colors placeholder-gray-400 rounded-none"
+              placeholder="用户名"
               autoComplete="username"
             />
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-              密码
-            </label>
+          <div className="mb-6">
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors placeholder-slate-400"
-              placeholder="输入密码"
+              className="w-full px-0 py-2 text-sm border-0 border-b border-gray-200 text-gray-900 focus:outline-none focus:border-indigo-600 transition-colors placeholder-gray-400 rounded-none"
+              placeholder="密码"
               autoComplete="current-password"
             />
           </div>
@@ -107,13 +91,13 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 px-4 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2 px-4 text-sm font-medium text-white bg-indigo-600 rounded-none hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? '登录中...' : '登录'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-500">
+        <p className="mt-6 text-center text-sm text-gray-500">
           还没有账号？{' '}
           <Link to="/register" className="text-indigo-600 hover:text-indigo-500 font-medium">
             注册

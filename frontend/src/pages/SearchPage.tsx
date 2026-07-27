@@ -27,33 +27,25 @@ export default function SearchPage() {
   });
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="flex items-center gap-2 mb-8">
-        <div className="w-1 h-5 bg-indigo-500 rounded-full" />
-        <h1 className="text-lg font-bold text-slate-900">
-          {keyword ? (
-            <>搜索 &ldquo;<span className="text-indigo-600">{keyword}</span>&rdquo; 的结果</>
-          ) : (
-            '搜索'
-          )}
-        </h1>
-      </div>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <h1 className="text-lg font-bold text-gray-900 pb-3 border-b border-gray-200 mb-6">
+        {keyword ? '搜索: ' + keyword : '搜索'}
+      </h1>
 
       {!keyword ? (
-        <p className="text-slate-500 text-center py-12 text-sm">输入关键词搜索帖子</p>
+        <p className="text-gray-500 text-center py-12 text-sm">输入关键词搜索帖子</p>
       ) : isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg border border-slate-200 p-5 animate-pulse">
-              <div className="h-5 bg-slate-200 rounded w-3/4 mb-3" />
-              <div className="h-4 bg-slate-100 rounded w-full mb-2" />
-              <div className="h-4 bg-slate-100 rounded w-1/2" />
+            <div key={i} className="animate-pulse border-b border-gray-100 py-3">
+              <div className="h-4 bg-gray-200 w-3/4 mb-2" />
+              <div className="h-3 bg-gray-100 w-1/3" />
             </div>
           ))}
         </div>
-      ) : data && data.list.length > 0 ? (
+      ) : data && data.list && data.list.length > 0 ? (
         <>
-          <div className="space-y-3">
+          <div>
             {data.list.map((post: any) => (
               <PostCard key={post.id} post={post} />
             ))}
@@ -65,7 +57,7 @@ export default function SearchPage() {
           />
         </>
       ) : (
-        <p className="text-slate-500 text-center py-12 text-sm">没有找到 &ldquo;{keyword}&rdquo; 的相关内容</p>
+        <p className="text-gray-500 text-center py-12 text-sm">没有找到 &ldquo;{keyword}&rdquo; 的相关内容</p>
       )}
     </div>
   );
