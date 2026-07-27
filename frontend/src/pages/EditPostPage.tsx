@@ -97,8 +97,8 @@ export default function EditPostPage() {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="animate-pulse space-y-4">
-          <div className="h-10 bg-gray-200 rounded w-1/3" />
-          <div className="h-96 bg-gray-200 rounded" />
+          <div className="h-3 bg-vibe-card rounded w-1/3" />
+          <div className="h-96 bg-vibe-card/50 rounded" />
         </div>
       </div>
     );
@@ -106,7 +106,7 @@ export default function EditPostPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Edit Post</h1>
+      <h1 className="text-3xl font-bold text-slate-200 mb-8"><span className="text-vibe-cyan">$</span> Edit Post</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
@@ -122,13 +122,13 @@ export default function EditPostPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Post title..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+              className="w-full px-4 py-3 border border-vibe-border rounded-lg text-sm font-mono text-slate-200 focus:outline-none focus:ring-2 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 focus:border-transparent"
             />
           </div>
           <select
             value={categoryId ?? ""}
             onChange={(e) => setCategoryId(Number(e.target.value))}
-            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent bg-white"
+            className="px-4 py-3 border border-vibe-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 focus:border-transparent bg-vibe-surface"
             disabled={channelsLoading}
           >
             {channelsLoading ? (
@@ -143,11 +143,11 @@ export default function EditPostPage() {
           </select>
         </div>
 
-        <div className="flex items-center gap-2 border border-gray-300 rounded-t-lg bg-gray-50 px-4 py-2">
+        <div className="flex items-center gap-2 border border-vibe-border rounded-t-lg bg-vibe-surface px-4 py-2">
           <button
             type="button"
             onClick={insertCodeBlock}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-300 bg-vibe-surface border border-vibe-border rounded-md hover:bg-vibe-card/50 transition-colors"
             title="Insert code block"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,15 +160,15 @@ export default function EditPostPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-x border-gray-300 rounded-b-lg overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-x border-vibe-border rounded-b-lg overflow-hidden">
           <textarea
             ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Write your post content in Markdown..."
-            className="w-full h-96 p-4 border-r border-gray-200 font-mono text-sm resize-none focus:outline-none focus:ring-0 border-0"
+            className="w-full h-96 p-4 border-r border-vibe-border font-mono text-sm resize-none focus:outline-none focus:ring-0 border-0"
           />
-          <div className="h-96 overflow-y-auto p-4 bg-white prose prose-sm max-w-none">
+          <div className="h-96 overflow-y-auto p-4 bg-vibe-surface prose prose-sm max-w-none">
             {content ? (
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {content}
@@ -183,14 +183,14 @@ export default function EditPostPage() {
           <button
             type="button"
             onClick={() => navigate(`/post/${id}`)}
-            className="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-6 py-3 border border-vibe-border text-slate-300 font-medium rounded-lg hover:bg-vibe-surface transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 bg-gradient-to-r from-vibe-cyan to-vibe-purple text-xs font-mono text-white hover:bg-gradient-to-r from-vibe-cyan to-vibe-purple disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {submitting ? 'Saving...' : 'Save Changes'}
           </button>
@@ -199,3 +199,4 @@ export default function EditPostPage() {
     </div>
   );
 }
+
