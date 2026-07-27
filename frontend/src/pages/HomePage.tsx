@@ -3,14 +3,13 @@ import { Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import PostCard from '../components/PostCard';
 
-
 const heroChannels = [
-  { slug: 'prompts', name: 'Prompt 工坊', description: 'System Prompt 设计、Chain-of-Thought、少样本技巧', icon: '\u{1F9E0}', color: 'from-violet-500 to-purple-600' },
-  { slug: 'showcase', name: '作品展示', description: 'Vibe Coding 成品展示：网页、工具、自动化流程', icon: '\u{1F3A8}', color: 'from-pink-500 to-rose-600' },
-  { slug: 'agents', name: 'Agent 实战', description: 'Multi-Agent、工具调用、OpenClaw/Codex 使用心得', icon: '\u{1F916}', color: 'from-blue-500 to-cyan-600' },
-  { slug: 'vibe-coding', name: 'Vibe Coding 经验', description: '上下文控制、幻觉治理、架构设计的纯经验讨论', icon: '\u{26A1}', color: 'from-emerald-500 to-teal-600' },
-  { slug: 'debug', name: '代码急诊室', description: '贴报错上下文，社区或 AI Agent 协助分析', icon: '\u{1F6A8}', color: 'from-red-500 to-orange-600' },
-  { slug: 'resources', name: '资源聚合', description: '工具链推荐、API 评测、教程链接', icon: '\u{1F4DA}', color: 'from-amber-500 to-yellow-600' },
+  { slug: 'prompts', name: 'Prompt 工坊', description: 'System Prompt 设计、Chain-of-Thought、少样本技巧', icon: '🧠' },
+  { slug: 'showcase', name: '作品展示', description: 'Vibe Coding 成品展示：网页、工具、自动化流程', icon: '🎨' },
+  { slug: 'agents', name: 'Agent 实战', description: 'Multi-Agent、工具调用、OpenClaw/Codex 使用心得', icon: '🤖' },
+  { slug: 'vibe-coding', name: 'Vibe Coding 经验', description: '上下文控制、幻觉治理、架构设计的纯经验讨论', icon: '⚡' },
+  { slug: 'debug', name: '代码急诊室', description: '贴报错上下文，社区或 AI Agent 协助分析', icon: '🚨' },
+  { slug: 'resources', name: '资源聚合', description: '工具链推荐、API 评测、教程链接', icon: '📚' },
 ];
 
 export default function HomePage() {
@@ -27,67 +26,63 @@ export default function HomePage() {
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">
+      {/* Hero Section — dark, dense, channel cards as content containers */}
+      <section className="bg-slate-900 border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+          <div className="mb-10">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
               Nexus-Vibe
             </h1>
-            <p className="text-lg text-indigo-200 max-w-2xl mx-auto">
+            <p className="text-slate-400 mt-2 max-w-xl text-sm leading-relaxed">
               Prompt 设计、Agent 实战、Vibe Coding——AI 开发者的技术交流社区
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {heroChannels.map((ch) => (
               <Link
                 key={ch.slug}
-                to={"/channel/" + ch.slug}
-                className={"bg-gradient-to-br " + ch.color + " rounded-xl p-5 hover:scale-[1.03] transition-transform shadow-lg"}
+                to={'/channel/' + ch.slug}
+                className="flex items-start gap-3 bg-slate-800/60 border border-slate-700/50 rounded-lg p-4 hover:bg-slate-800 hover:border-slate-600 transition-colors group"
               >
-                <div className="text-3xl mb-2">{ch.icon}</div>
-                <h3 className="font-semibold text-lg">{ch.name}</h3>
-                <p className="text-sm text-white/80 mt-1">{ch.description}</p>
+                <span className="text-xl shrink-0 mt-0.5">{ch.icon}</span>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-white group-hover:text-indigo-400 transition-colors">
+                    {ch.name}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{ch.description}</p>
+                </div>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Hot Posts */}
+      {/* Hot Posts — clean list */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex items-center gap-2 mb-6">
-          <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M11.993 22.016c-4.973 0-9-4.027-9-9s4.027-9 9-9 9 4.027 9 9-4.027 9-9 9zm0-16c-3.86 0-7 3.14-7 7s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1.993 9.817l-2.517-1.62-2.483 1.62.657-2.76-2.123-1.82 2.763-.193 1.186-2.7 1.066 2.623 2.784.479-1.897 1.887.624 2.484z" />
-          </svg>
-          <h2 className="text-2xl font-bold text-gray-900">Hot Posts</h2>
+          <div className="w-1 h-5 bg-indigo-500 rounded-full" />
+          <h2 className="text-lg font-bold text-slate-900">热门帖子</h2>
         </div>
-          {postsLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-lg border border-gray-200 p-5 animate-pulse">
-                  <div className="h-5 bg-gray-200 rounded w-3/4 mb-3" />
-                  <div className="h-4 bg-gray-100 rounded w-full mb-2" />
-                  <div className="h-4 bg-gray-100 rounded w-1/2" />
-                </div>
-              ))}
-            </div>
-          ) : hotPosts && hotPosts.length > 0 ? (
-            <div className="space-y-4">
-              {hotPosts.map((post: any) => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-12">No posts yet. Be the first to share!</p>
-          )}
+        {postsLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-lg border border-slate-200 p-5 animate-pulse">
+                <div className="h-5 bg-slate-200 rounded w-3/4 mb-3" />
+                <div className="h-4 bg-slate-100 rounded w-full mb-2" />
+                <div className="h-4 bg-slate-100 rounded w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : hotPosts && hotPosts.length > 0 ? (
+          <div className="space-y-3">
+            {hotPosts.map((post: any) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-slate-500 text-center py-12 text-sm">还没有帖子，来做第一个分享的人吧</p>
+        )}
       </section>
     </div>
   );
 }
-
-
-
-
-
-

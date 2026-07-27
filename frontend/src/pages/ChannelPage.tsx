@@ -5,7 +5,6 @@ import { apiClient } from '../api/client';
 import PostCard from '../components/PostCard';
 import Pagination from '../components/Pagination';
 
-
 export default function ChannelPage() {
   const { slug } = useParams<{ slug: string }>();
   const [page, setPage] = useState(1);
@@ -36,7 +35,7 @@ export default function ChannelPage() {
   if (!slug) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <p className="text-gray-500">No channel specified.</p>
+        <p className="text-slate-500 text-sm">未指定频道</p>
       </div>
     );
   }
@@ -44,36 +43,41 @@ export default function ChannelPage() {
   if (channels && !channel) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Channel not found</h2>
-        <p className="text-gray-500">The channel &ldquo;{slug}&rdquo; doesn&rsquo;t exist.</p>
+        <h2 className="text-xl font-bold text-slate-900 mb-2">频道未找到</h2>
+        <p className="text-slate-500 text-sm">频道 &ldquo;{slug}&rdquo; 不存在</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* Channel header — compact with accent bar */}
       {channel && (
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">{channel.name}</h1>
+        <div className="mb-8 pb-6 border-b border-slate-200">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
+            <h1 className="text-xl font-bold text-slate-900">{channel.name}</h1>
+          </div>
           {channel.description && (
-            <p className="text-gray-500 mt-1">{channel.description}</p>
+            <p className="text-sm text-slate-500 mt-1 ml-[1.125rem]">{channel.description}</p>
           )}
         </div>
       )}
 
+      {/* Post list */}
       {isLoading ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg border border-gray-200 p-5 animate-pulse">
-              <div className="h-5 bg-gray-200 rounded w-3/4 mb-3" />
-              <div className="h-4 bg-gray-100 rounded w-full mb-2" />
-              <div className="h-4 bg-gray-100 rounded w-1/2" />
+            <div key={i} className="bg-white rounded-lg border border-slate-200 p-5 animate-pulse">
+              <div className="h-5 bg-slate-200 rounded w-3/4 mb-3" />
+              <div className="h-4 bg-slate-100 rounded w-full mb-2" />
+              <div className="h-4 bg-slate-100 rounded w-1/2" />
             </div>
           ))}
         </div>
       ) : postsData && postsData.list.length > 0 ? (
         <>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {postsData.list.map((post: any) => (
               <PostCard key={post.id} post={post} />
             ))}
@@ -85,13 +89,8 @@ export default function ChannelPage() {
           />
         </>
       ) : (
-        <p className="text-gray-500 text-center py-12">No posts in this channel yet.</p>
+        <p className="text-slate-500 text-center py-12 text-sm">这个频道还没有帖子</p>
       )}
     </div>
   );
 }
-
-
-
-
-
