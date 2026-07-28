@@ -1,6 +1,6 @@
 package com.nexus.campus.task;
 
-import com.nexus.campus.mapper.BbsPostMapper;
+import com.nexus.campus.mapper.VibePostMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +29,7 @@ public class LikeSyncTask {
     private RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
-    private BbsPostMapper bbsPostMapper;
+    private VibePostMapper vibePostMapper;
 
     /**
      * Every 5 minutes, flush dirty like counters from Redis to MySQL.
@@ -58,7 +58,7 @@ public class LikeSyncTask {
                 Long redisCount = redisTemplate.opsForSet().size(key);
 
                 if (redisCount != null) {
-                    bbsPostMapper.updateLikeCount(postId, redisCount.intValue());
+                    vibePostMapper.updateLikeCount(postId, redisCount.intValue());
                 }
 
                 redisTemplate.opsForSet().remove(DIRTY_SET_KEY, postIdStr);

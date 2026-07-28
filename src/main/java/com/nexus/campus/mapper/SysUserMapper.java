@@ -15,7 +15,7 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
     List<SysUser> searchByKeyword(@Param("keyword") String keyword);
 
     @Select("SELECT DISTINCT u.* FROM sys_user u " +
-            "INNER JOIN bbs_post p ON p.user_id = u.id " +
+            "INNER JOIN vibe_post p ON p.user_id = u.id " +
             "WHERE p.status = 1 AND p.create_time >= DATEADD('DAY', -7, CURRENT_TIMESTAMP) " +
             "ORDER BY p.create_time DESC " +
             "LIMIT #{limit}")

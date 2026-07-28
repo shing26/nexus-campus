@@ -13,7 +13,7 @@ server:
 
 spring:
   application:
-    name: nexus-campus
+    name: nexus-vibe
   task:
     execution:
       pool:
@@ -35,10 +35,6 @@ spring:
       data-locations: classpath:data.sql
 
   # JSP View Resolver
-  mvc:
-    view:
-      prefix: /WEB-INF/views/
-      suffix: .jsp
 
   # H2 Database (dev mode - switch to MySQL for production)
   datasource:
@@ -104,8 +100,17 @@ campus:
     dir: src/main/resources/static/uploads
   security:
     sensitive-words: fuck,shit,damn,asshole,bitch
-    critical-words: 闁哄棙娼欐慨蹇涘礆閸℃凹妫?濡壆濮鹃々顐﹀炊閽樺鍟€,闂侇収浜濋弳鈧紓浣稿缁?闁诡厽鍔栭埀顒佺墧鐎靛本绋?闁哄鑳堕顒傗偓瑙勵殕閺嗏偓,闁告帒妫滈ˉ鍥╂嚊閳ь剛鎷?闁告瑥绉存慨鈺傜┍閳╁啩绱?
+    critical-words: 闂備礁鎼Λ娆忣焽濞嗘劖鍙忛煫鍥ㄧ☉缁€鍡涙煕閳╁啫鍤俊?濠碘槅鍋呮竟鍡樻叏妤ｅ啨鈧懘顢曢敃鈧悙濠囨煢濡警妯堥柛鐔插亾,闂傚倷绶￠崣搴㈢濠靛姹查柍褜鍓涚槐鎾存媴缁嬫浼€缂?闂備浇顕栭崢浠嬪礉閺嶎厼鐒垫い鎺嶈兌婢а囨倵闂堟稒婀扮紒?闂備礁鎼鍕嚄閸洦鏁傛い鎺戝€甸崑鎾舵喆閸曞灚鐣烽梺鍝勬閸?闂備礁鎲＄敮鎺懳涘鍩跺宕堕埡鍌氭疁闂侀€炲苯澧伴柟?闂備礁鎲￠悷銉х矓鐎涙ɑ鍙忛柍鍝勫€婚埞宥夋煃閳轰礁鏆曠紒?
     audit-required-level: 2
+
+  ai:
+    review:
+      enabled: true
+    llm:
+      endpoint: https://api.openai.com/v1
+      api-key: ${LLM_API_KEY:}
+      model: gpt-4o
+      timeout: 30s
 
 # Logging
 logging:

@@ -1,7 +1,7 @@
 package com.nexus.campus.service;
 
-import com.nexus.campus.entity.BbsPost;
-import com.nexus.campus.mapper.BbsPostMapper;
+import com.nexus.campus.entity.VibePost;
+import com.nexus.campus.mapper.VibePostMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ class LikeCounterServiceTest {
     private SetOperations<String, Object> setOperations;
 
     @Mock
-    private BbsPostMapper bbsPostMapper;
+    private VibePostMapper vibePostMapper;
 
     @Mock
     private StringRedisTemplate stringRedisTemplate;
@@ -55,38 +55,38 @@ class LikeCounterServiceTest {
         when(redisTemplate.opsForSet()).thenReturn(setOperations);
     }
 
-    // ──────────────────────────────────────────────
-    // Redis unavailable → fallback to MySQL
-    // ──────────────────────────────────────────────
+    // ------------------------------------------------------------
+    // Redis unavailable -> fallback to MySQL
+    // ------------------------------------------------------------
 
     @Test
     @DisplayName("likePost() should fall back to MySQL when Redis is unavailable")
     void likePostRedisUnavailable() {
         ReflectionTestUtils.setField(likeCounterService, "redisAvailable", false);
-        BbsPost post = new BbsPost();
+        VibePost post = new VibePost();
         post.setId(postId);
         post.setLikeCount(10);
-        when(bbsPostMapper.selectById(postId)).thenReturn(post);
+        when(vibePostMapper.selectById(postId)).thenReturn(post);
 
         long count = likeCounterService.likePost(postId, userId);
 
         assertEquals(10, count);
-        verify(bbsPostMapper).incrementLikeCount(postId);
+        verify(vibePostMapper).incrementLikeCount(postId);
     }
 
     @Test
     @DisplayName("unlikePost() should fall back to MySQL when Redis is unavailable")
     void unlikePostRedisUnavailable() {
         ReflectionTestUtils.setField(likeCounterService, "redisAvailable", false);
-        BbsPost post = new BbsPost();
+        VibePost post = new VibePost();
         post.setId(postId);
         post.setLikeCount(9);
-        when(bbsPostMapper.selectById(postId)).thenReturn(post);
+        when(vibePostMapper.selectById(postId)).thenReturn(post);
 
         long count = likeCounterService.unlikePost(postId, userId);
 
         assertEquals(9, count);
-        verify(bbsPostMapper).incrementLikeCount(postId);
+        verify(vibePostMapper).incrementLikeCount(postId);
     }
 
     @Test
@@ -103,10 +103,10 @@ class LikeCounterServiceTest {
     @DisplayName("getLikeCount() should fall back to MySQL when Redis is unavailable")
     void getLikeCountRedisUnavailable() {
         ReflectionTestUtils.setField(likeCounterService, "redisAvailable", false);
-        BbsPost post = new BbsPost();
+        VibePost post = new VibePost();
         post.setId(postId);
         post.setLikeCount(25);
-        when(bbsPostMapper.selectById(postId)).thenReturn(post);
+        when(vibePostMapper.selectById(postId)).thenReturn(post);
 
         long count = likeCounterService.getLikeCount(postId);
 
@@ -117,16 +117,16 @@ class LikeCounterServiceTest {
     @DisplayName("getLikeCount() should return 0 when post not found and Redis unavailable")
     void getLikeCountPostNotFound() {
         ReflectionTestUtils.setField(likeCounterService, "redisAvailable", false);
-        when(bbsPostMapper.selectById(postId)).thenReturn(null);
+        when(vibePostMapper.selectById(postId)).thenReturn(null);
 
         long count = likeCounterService.getLikeCount(postId);
 
         assertEquals(0, count);
     }
 
-    // ──────────────────────────────────────────────
+    // ------------------------------------------------------------
     // Redis available
-    // ──────────────────────────────────────────────
+    // ------------------------------------------------------------
 
     @Test
     @DisplayName("likePost() should use Redis SADD and return the set size")
@@ -153,7 +153,6 @@ class LikeCounterServiceTest {
         long count = likeCounterService.likePost(postId, userId);
 
         assertEquals(3L, count);
-        // Should NOT mark dirty since it was not a new like
         verify(setOperations, never()).add(eq("post:like:dirty"), anyString());
     }
 

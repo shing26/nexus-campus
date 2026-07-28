@@ -27,11 +27,11 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 2. Post Category Table
-CREATE TABLE IF NOT EXISTS `bbs_category` (
+CREATE TABLE IF NOT EXISTS `vibe_channel` (
   `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `name` varchar(50) NOT NULL,
   `description` varchar(255) DEFAULT NULL,
+  `slug` varchar(50) DEFAULT NULL UNIQUE,
   `sort_order` int NOT NULL DEFAULT 0,
   `status` tinyint NOT NULL DEFAULT 1,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -100,6 +100,23 @@ CREATE TABLE IF NOT EXISTS `sys_message` (
 CREATE INDEX `idx_msg_to_user` ON `sys_message`(`to_user_id`);
 CREATE INDEX `idx_msg_from_user` ON `sys_message`(`from_user_id`);
 
+-- 8. AI Review Log Table
+CREATE TABLE IF NOT EXISTS `ai_review_log` (
+  `id` bigint NOT NULL PRIMARY KEY,
+  `post_id` bigint NOT NULL,
+  `reviewer` varchar(50) NOT NULL DEFAULT 'code-review-agent',
+  `result_json` text,
+  `severity` varchar(20),
+  `is_approved` tinyint DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 9. AI Review columns for vibe_post
+ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `code_snippets` text;
+ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `ai_reviewed` tinyint NOT NULL DEFAULT 0;
+ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `ai_review_score` int NOT NULL DEFAULT 0;
+ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `token_count` int NOT NULL DEFAULT 0;
+
 -- =============================================================================
 -- Seed Data (adapted from src/main/resources/data.sql for MySQL)
 -- =============================================================================
@@ -112,14 +129,15 @@ VALUES (1, 'admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c
 INSERT INTO `sys_user` (`id`, `username`, `password`, `nickname`, `avatar`, `role`, `core_power`, `level`, `status`)
 VALUES (2, 'testuser', 'ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae', 'Test User', 'default_avatar.png', 'USER', 50, 1, 1);
 
--- Categories
-INSERT INTO `bbs_category` (`id`, `name`, `description`, `sort_order`, `status`)
+INSERT INTO `vibe_channel` (`id`, `name`, `description`, `slug`, `sort_order`, `status`)
 VALUES
-(1, 'Technical Exchange', 'Coding, architecture, and technology discussions', 1, 1),
-(2, 'Life Sharing', 'Campus life, hobbies, and daily experiences', 2, 1),
-(3, 'Academic Frontier', 'Research, papers, and academic resources', 3, 1),
-(4, 'Career Development', 'Internships, jobs, and career planning', 4, 1),
-(5, 'Creative Space', 'Art, music, writing, and creative projects', 5, 1);
+(1, '社区公告', '系统公告、更新日志（管理员只读）', 'announcements', 1, 1),
+(2, 'Prompt 工坊', 'System Prompt 设计、Chain-of-Thought、少样本技巧', 'prompts', 2, 1),
+(3, '作品展示', 'Vibe Coding 成品展示：网页、工具、自动化流程', 'showcase', 3, 1),
+(4, 'Agent 实战', 'Multi-Agent、工具调用、OpenClaw/Codex 使用心得', 'agents', 4, 1),
+(5, 'Vibe Coding 经验', '上下文控制、幻觉治理、架构设计的纯经验讨论', 'vibe-coding', 5, 1),
+(6, '代码急诊室', '贴报错上下文，社区或 AI Agent 协助分析', 'debug', 6, 1),
+(7, '资源聚合', '工具链推荐、API 评测、教程链接', 'resources', 7, 1);
 
 -- Tags
 INSERT INTO `bbs_tag` (`id`, `name`, `status`)
@@ -139,6 +157,10 @@ VALUES
 INSERT INTO `bbs_post` (`id`, `user_id`, `category_id`, `title`, `content`, `summary`, `view_count`, `like_count`, `comment_count`, `status`)
 VALUES
 (17921094810291, 2, 1, 'Welcome to Nexus Campus - The Cyberpunk Forum',
+
+-- AI Agent System Account (id=999, non-login placeholder)
+INSERT INTO `sys_user` (`id`, `username`, `password`, `nickname`, `avatar`, `role`, `core_power`, `level`, `status`)
+VALUES (999, 'AiAgent', 'NOLOGIN_AI_AGENT_ACCOUNT', 'AI 助手', 'robot_avatar.png', 'AI_AGENT', 0, 1, 1);
 '<h1>Welcome, Netrunners!</h1><p>This is the Nexus Campus Forum - a high-performance, cyberpunk-themed campus discussion platform.</p>',
 'Welcome to Nexus Campus Forum.', 42, 7, 0, 1),
 (17921094810292, 2, 1, 'Spring Boot Integrated ES Complete Guide',

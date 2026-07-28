@@ -1,7 +1,7 @@
 package com.nexus.campus.service;
 
-import com.nexus.campus.entity.BbsPost;
-import com.nexus.campus.mapper.BbsPostMapper;
+import com.nexus.campus.entity.VibePost;
+import com.nexus.campus.mapper.VibePostMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +44,7 @@ public class LikeCounterService {
     private DefaultRedisScript<Long> likeToggleScript;
 
     @Autowired
-    private BbsPostMapper bbsPostMapper;
+    private VibePostMapper vibePostMapper;
 
     boolean redisAvailable;
 
@@ -125,7 +125,7 @@ public class LikeCounterService {
                 log.warn("[NEXUS-LIKE] getLikeCount from Redis failed for post {}: {}", postId, e.getMessage());
             }
         }
-        BbsPost post = bbsPostMapper.selectById(postId);
+        VibePost post = vibePostMapper.selectById(postId);
         return post != null ? post.getLikeCount() : 0;
     }
 
@@ -164,16 +164,16 @@ public class LikeCounterService {
     // =================================================
 
     private long likeViaMysql(Long postId) {
-        bbsPostMapper.incrementLikeCount(postId);
-        BbsPost post = bbsPostMapper.selectById(postId);
+        vibePostMapper.incrementLikeCount(postId);
+        VibePost post = vibePostMapper.selectById(postId);
         long count = (post != null) ? post.getLikeCount() : 0;
         log.debug("[NEXUS-LIKE] Direct MySQL like on post {} (count={})", postId, count);
         return count;
     }
 
     private long unlikeViaMysql(Long postId) {
-        bbsPostMapper.updateLikeCountDelta(postId, -1);
-        BbsPost post = bbsPostMapper.selectById(postId);
+        vibePostMapper.updateLikeCountDelta(postId, -1);
+        VibePost post = vibePostMapper.selectById(postId);
         long count = (post != null) ? Math.max(post.getLikeCount(), 0) : 0;
         log.debug("[NEXUS-LIKE] Direct MySQL unlike on post {} (count={})", postId, count);
         return count;

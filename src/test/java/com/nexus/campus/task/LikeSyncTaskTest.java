@@ -1,6 +1,6 @@
 package com.nexus.campus.task;
 
-import com.nexus.campus.mapper.BbsPostMapper;
+import com.nexus.campus.mapper.VibePostMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ class LikeSyncTaskTest {
     private SetOperations<String, Object> setOperations;
 
     @Mock
-    private BbsPostMapper bbsPostMapper;
+    private VibePostMapper vibePostMapper;
 
     @InjectMocks
     private LikeSyncTask likeSyncTask;
@@ -57,7 +57,7 @@ class LikeSyncTaskTest {
         likeSyncTask.syncLikes();
 
         verify(setOperations).members(dirtyKey);
-        verify(bbsPostMapper, never()).updateLikeCount(anyLong(), anyInt());
+        verify(vibePostMapper, never()).updateLikeCount(anyLong(), anyInt());
     }
 
     @Test
@@ -67,19 +67,19 @@ class LikeSyncTaskTest {
 
         likeSyncTask.syncLikes();
 
-        verify(bbsPostMapper, never()).updateLikeCount(anyLong(), anyInt());
+        verify(vibePostMapper, never()).updateLikeCount(anyLong(), anyInt());
     }
 
     @Test
     @DisplayName("syncLikes() should skip when Redis is unavailable")
     void syncLikesRedisUnavailable() {
         LikeSyncTask task = new LikeSyncTask();
-        ReflectionTestUtils.setField(task, "bbsPostMapper", bbsPostMapper);
+        ReflectionTestUtils.setField(task, "vibePostMapper", vibePostMapper);
         // redisTemplate is null
 
         task.syncLikes();
 
-        verify(bbsPostMapper, never()).updateLikeCount(anyLong(), anyInt());
+        verify(vibePostMapper, never()).updateLikeCount(anyLong(), anyInt());
     }
 
     // -- Happy path --
@@ -94,8 +94,8 @@ class LikeSyncTaskTest {
         likeSyncTask.syncLikes();
 
         verify(setOperations).members(dirtyKey);
-        verify(bbsPostMapper).updateLikeCount(postId1, 5);
-        verify(bbsPostMapper).updateLikeCount(postId2, 3);
+        verify(vibePostMapper).updateLikeCount(postId1, 5);
+        verify(vibePostMapper).updateLikeCount(postId2, 3);
         verify(setOperations).remove(dirtyKey, "10");
         verify(setOperations).remove(dirtyKey, "20");
     }
@@ -109,7 +109,7 @@ class LikeSyncTaskTest {
         likeSyncTask.syncLikes();
 
         verify(setOperations).members(dirtyKey);
-        verify(bbsPostMapper, never()).updateLikeCount(anyLong(), anyInt());
+        verify(vibePostMapper, never()).updateLikeCount(anyLong(), anyInt());
         verify(setOperations).remove(dirtyKey, "10");
     }
 
@@ -122,8 +122,9 @@ class LikeSyncTaskTest {
 
         likeSyncTask.syncLikes();
 
-        verify(bbsPostMapper).updateLikeCount(postId2, 3);
-        verify(bbsPostMapper, never()).updateLikeCount(eq(postId1), anyInt());
+        verify(vibePostMapper).updateLikeCount(postId2, 3);
+        verify(vibePostMapper, never()).updateLikeCount(eq(postId1), anyInt());
         verify(setOperations).remove(dirtyKey, "20");
     }
 }
+
