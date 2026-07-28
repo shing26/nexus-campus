@@ -1,119 +1,92 @@
-﻿# Nexus-Campus
+﻿# Nexus-Vibe
 
-**AI-Driven Cyberpunk Campus Forum System**
+**AI-Powered Vibe Coding & Developer Community**
 
-A futuristic, cyberpunk-themed campus forum built with Spring Boot 3.3, MyBatis-Plus, JSP, JWT authentication, Redis caching, and Elasticsearch full-text search. Features DFA-based sensitive word filtering, content audit workflows, and a neon-dark UI inspired by cyberpunk aesthetics.
-
----
+Nexus-Vibe is a full-stack AI developer community platform — a modern replacement for the traditional campus forum. Built with Spring Boot 3.3 + React, featuring AI Agent code review, LLM-based content safety checks, and an IDE-station dark UI.
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| **Framework** | Spring Boot 3.3.5 |
-| **Language** | Java 18 |
+| **Backend** | Spring Boot 3.3.5, Java 18 |
 | **ORM** | MyBatis-Plus 3.5.9 |
-| **View** | JSP (Jakarta EE), JSTL 3.0 |
+| **Frontend** | React 18 + Vite + TypeScript + Tailwind CSS |
+| **State** | TanStack Query + Zustand |
+| **Animation** | Motion (Framer Motion successor) |
+| **Font** | Inter + JetBrains Mono |
 | **Database** | H2 (dev) / MySQL 8 (prod) |
 | **Cache** | Redis (Lettuce) |
 | **Search** | Elasticsearch 8.13.4 |
 | **Auth** | JWT (jjwt 0.12.6) |
-| **Security** | XSS Filter, DFA Sensitive Word Filter |
-| **API Docs** | SpringDoc OpenAPI 3 (Swagger UI) |
-| **Build** | Maven 3.9+ |
-| **Deploy** | Docker, docker-compose |
-| **Logging** | Logstash Logback Encoder |
-
----
+| **Security** | XSS Filter + DFA Sensitive Word Filter + LLM semantic check |
+| **Build** | Maven 3.9+ (backend) + Vite (frontend) |
 
 ## Architecture
 
-### MVC Layering
+### Backend (Spring Boot)
 
 ```
-Controller (REST + JSP) → Service → Mapper (MyBatis-Plus) → DB
-                                    ↓
-                              Redis Cache
-                                    ↓
-                          Elasticsearch (full-text)
+Controller (REST API) → Service → Mapper (MyBatis-Plus) → DB
+                              ↓
+                        Redis Cache
+                              ↓
+                     Elasticsearch (full-text)
+                              ↓
+              AI Agent (async) — Code Review + Safety Check
 ```
 
-- **Controller**: REST endpoints (JSON) + JSP view controllers
-- **Service**: Business logic, caching, DFA filtering
-- **Mapper**: MyBatis-Plus data access
-- **Entity**: POJOs mapped to DB tables
+- **REST API**: `/api/v1/*` endpoints for all CRUD + auth
+- **AI Agent Pipeline**: `AiReviewEvent` → `LlmClient` (OpenAI-compatible) → auto-comment
+- **LLM Safety Check**: DFA pass-through → async LLM classification (4 categories)
+- **Caching**: Redis-backed like toggle, gravity-decay hot ranking, sliding window rate limiting
 
-### Security Architecture
+### Frontend (React SPA)
 
 ```
-Request → XSS Filter → JWT Auth Filter → Controller
-              ↓
-       DFA Sensitive Word Engine (AOP-driven)
-              ↓
-      Audit Workflow (auto-flag + admin review)
+frontend/
+├── src/
+│   ├── components/        # UI components (Navbar, Sidebar, PostCard, Avatar...)
+│   │   ├── ui/            # Animated components (SpotlightCard, BorderBeam, ShimmerButton...)
+│   │   └── layout/        # MainLayout, AdminLayout
+│   ├── pages/             # 12+ page components
+│   ├── api/               # Axios client + TanStack Query hooks
+│   ├── stores/            # Zustand stores (auth, theme)
+│   └── types/             # TypeScript interfaces
 ```
 
-- **XSS Filter**: Sanitizes all input at servlet level
-- **JWT Filter**: Extracts & validates tokens, sets user context
-- **DFA Filter**: AOP-based sensitive word detection (two-tier: sensitive + critical)
-- **Audit**: Auto-triggered for critical-level content, admin dashboard for review
+**Design**: 2-column IDE workstation layout — sidebar console + main workspace. Dark cyberpunk theme (`vibe-*` color palette), macOS terminal card patterns, motion animations throughout.
 
-### Caching Strategy
+## Features
 
-- Redis used for hot post data, like counters, and session-related cache
-- Lettuce connection pool (8 max active)
-- Configurable Redis enable/disable per profile
+### Core
+- [x] User registration & login (JWT auth)
+- [x] Post CRUD with Markdown editor + live preview
+- [x] Channel-based browsing with slug routing
+- [x] Full-text search (ES + MySQL fallback)
+- [x] Comments with thread-style layout
+- [x] Like/unlike with Redis atomic toggle
 
----
+### AI
+- [x] **AI Code Review Agent**: Asynchronous LLM-powered post review with structured output (score, quality, security, suggestions)
+- [x] **Structured Outputs**: JSON Schema-enforced review format via OpenAI API
+- [x] **Prompt Injection Guardrails**: Delimiter-based isolation, Chain of Thought analysis
+- [x] **LLM Safety Check**: 4-class classification (Prompt injection / Harmful / Spam / Safe) with per-class handling
 
-## Feature List
+### Design
+- [x] Dark cyberpunk theme with `vibe` color palette
+- [x] 2-column IDE layout (sidebar + workspace)
+- [x] macOS terminal card patterns
+- [x] Motion animations (page transitions, stagger lists, hover effects)
+- [x] Animated components: SpotlightCard, BorderBeam, DecryptedText, ShimmerButton
+- [x] Dark mode toggle with localStorage persistence
+- [x] Circular initial avatars with hash colors
 
-### Authentication & User
-- [x] User registration & login
-- [x] JWT token issuance & validation
-- [x] Role-based access (user / admin)
-- [x] Personal profile page
-
-### Posts & Categories
-- [x] Create, view, list posts (paginated)
-- [x] Category-based browsing
-- [x] Post tags (many-to-many)
-- [x] Rich post detail with comments
-
-### Comments
-- [x] Add comments on posts
-- [x] Comment listing with pagination
-- [x] Input sanitization
-
-### Likes & Social
-- [x] Like/unlike posts
-- [x] Like counter (Redis-backed)
-
-### Search
-- [x] Elasticsearch full-text search integration
-- [x] Index posts for search
-
-### Content Moderation
-- [x] Two-tier sensitive words (sensitive / critical)
-- [x] DFA algorithm for word detection
-- [x] Auto-block posts with critical words
-- [x] Flag posts with sensitive words for review
-- [x] Admin audit dashboard (approve / reject)
-- [x] Audit log
-
-### Admin
+### Infrastructure
+- [x] DFA sensitive word filtering (two-tier: sensitive + critical)
+- [x] Sliding window rate limiting (Redis + Lua)
+- [x] Gravity-decay hot ranking (hourly recalculation)
+- [x] Write-behind like counter sync (every 5 min)
 - [x] Admin audit dashboard
-- [x] Post approval workflow
-- [x] User message system
-
-### System
-- [x] Global exception handler
-- [x] AOP logging
-- [x] XSS protection filter
-- [x] MyBatis-Plus auto-fill (createTime, updateTime, etc.)
-- [x] Multi-profile config (dev H2 / prod MySQL)
-
----
 
 ## Quick Start
 
@@ -121,210 +94,91 @@ Request → XSS Filter → JWT Auth Filter → Controller
 
 - JDK 18+
 - Maven 3.9+
+- Node.js 18+
 - Redis (optional, can be disabled)
-- Elasticsearch 8.x (optional)
 
 ### Run in Development Mode
 
 ```bash
-# Clone the repo
-git clone https://github.com/your-org/nexus-campus.git
+# Clone
+git clone https://github.com/shing26/nexus-campus.git
 cd nexus-campus
 
-# Build
+# Backend (H2 in-memory DB, auto-creates schema + seed data)
 mvn clean package -DskipTests
-
-# Run (H2 in-memory DB, auto-creates schema + seed data)
 mvn spring-boot:run
+# → http://localhost:8081
 
-# Access
-# App:    http://localhost:8081
-# H2:     http://localhost:8081/h2-console
-# Swagger: http://localhost:8081/swagger-ui.html
+# Frontend (separate terminal)
+cd frontend
+npm install
+npm run dev
+# → http://localhost:5173 (auto-proxies /api to :8081)
 ```
+
+### Default Accounts
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin` | `123456` | ADMIN |
+| `shing` | `123456` | USER |
 
 ### Run with MySQL (Production)
 
 ```bash
-# Start with MySQL profile
 mvn spring-boot:run -Dspring-boot.run.profiles=mysql
 ```
-
-Edit `application.yml` (mysql profile) with your MySQL credentials.
-
----
-
-## API Examples
-
-All REST endpoints return JSON via `ApiResponse<T>` wrapper.
-
-### Login
-
-```bash
-curl -X POST http://localhost:8081/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
-```
-
-Response:
-```json
-{
-  "success": true,
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiJ9...",
-    "username": "admin",
-    "role": "ADMIN"
-  }
-}
-```
-
-### Create Post (authenticated)
-
-```bash
-curl -X POST http://localhost:8081/api/posts \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <TOKEN>" \
-  -d '{"title":"Hello Nexus","content":"Welcome to the cyberpunk campus!","categoryId":1,"tags":[1,2]}'
-```
-
-### Like a Post
-
-```bash
-curl -X POST http://localhost:8081/api/posts/1/like \
-  -H "Authorization: Bearer <TOKEN>"
-```
-
-### Add Comment
-
-```bash
-curl -X POST http://localhost:8081/api/posts/1/comments \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <TOKEN>" \
-  -d '{"content":"Great post!"}'
-```
-
-### Audit Post (admin)
-
-```bash
-curl -X POST http://localhost:8081/api/admin/audit/1 \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <ADMIN_TOKEN>" \
-  -d '{"action":"APPROVED","reason":"OK"}'
-```
-
----
-
-## Docker Deployment
-
-### Build & Run with Docker Compose
-
-```yaml
-# docker-compose.yml (project root)
-version: "3.8"
-services:
-  app:
-    build: .
-    ports:
-      - "8081:8081"
-    environment:
-      - SPRING_PROFILES_ACTIVE=mysql
-      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/nexus_campus?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
-      - SPRING_REDIS_HOST=redis
-    depends_on:
-      - db
-      - redis
-
-  db:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: nexus_campus
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
-volumes:
-  mysql_data:
-```
-
-```bash
-# Build Docker image
-docker build -t nexus-campus .
-
-# Run with Compose
-docker-compose up -d
-```
-
-### Dockerfile (project root)
-
-```dockerfile
-FROM eclipse-temurin:18-jre-alpine
-WORKDIR /app
-COPY target/nexus-campus.war app.war
-EXPOSE 8081
-ENTRYPOINT ["java", "-jar", "app.war"]
-```
-
----
 
 ## Project Structure
 
 ```
 nexus-campus/
-├── src/
-│   ├── main/
-│   │   ├── java/com/nexus/campus/
-│   │   │   ├── aspect/               # AOP (logging, DFA filter)
-│   │   │   ├── config/               # Spring configs (Security, WebMVC, Redis, XSS, Swagger, MyBatis-Plus)
-│   │   │   ├── controller/           # REST controllers + page controllers
-│   │   │   ├── dto/                  # Request/Response DTOs
-│   │   │   ├── entity/               # MyBatis-Plus entities
-│   │   │   ├── filter/               # XSS filter
-│   │   │   ├── mapper/               # MyBatis-Plus mappers
-│   │   │   ├── security/             # JWT auth filter
-│   │   │   ├── service/              # Business logic + implementations
-│   │   │   ├── util/                 # DFA filter, JWT util
-│   │   │   └── NexusCampusApplication.java
-│   │   ├── resources/
-│   │   │   ├── mapper/               # MyBatis XML mappers
-│   │   │   ├── static/               # Static assets (CSS, JS, images)
-│   │   │   ├── application.yml       # Main config
-│   │   │   ├── schema.sql            # DB schema
-│   │   │   └── data.sql              # Seed data
-│   │   └── webapp/WEB-INF/views/     # JSP views
-│   │       ├── admin/                # Admin pages
-│   │       ├── common/               # Public pages (index, login, register)
-│   │       ├── post/                 # Post pages (create, detail)
-│   │       └── user/                 # User pages (profile)
-│   └── test/
+├── frontend/                   # React SPA (Vite + TypeScript + Tailwind)
+│   ├── src/
+│   │   ├── components/         # Shared UI components
+│   │   │   └── ui/             # Animated micro-interaction components
+│   │   ├── pages/              # Page components
+│   │   ├── api/                # API client + hooks
+│   │   ├── stores/             # Zustand stores
+│   │   └── types/              # TypeScript types
+│   ├── package.json
+│   └── vite.config.ts
+├── src/main/java/com/nexus/campus/
+│   ├── agent/                  # AI Agent (LlmClient, Review, Safety)
+│   ├── controller/             # REST controllers
+│   ├── service/                # Business logic
+│   ├── entity/                 # MyBatis-Plus entities
+│   ├── mapper/                 # Data access
+│   ├── dto/                    # Request/Response DTOs
+│   ├── config/                 # Spring configs
+│   ├── security/               # JWT auth filter
+│   └── util/                   # DFA filter, JWT util
 ├── pom.xml
-├── README.md
-├── CHANGELOG.md
-├── .gitignore
-└── Dockerfile
+├── CONTEXT.md                  # Domain glossary
+└── docs/
+    ├── adr/                    # Architecture Decision Records
+    ├── research/               # Research documents
+    └── ...
 ```
 
----
+## API Examples
 
-## Profiles
+```bash
+# Login
+curl -X POST http://localhost:8081/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"123456"}'
 
-| Profile | Database | Redis | Elasticsearch |
-|---------|----------|-------|---------------|
-| `default` | H2 in-memory | ⚠️ Optional | Optional |
-| `mysql` | MySQL 8 | Redis required | Optional |
+# Get channels
+curl http://localhost:8081/api/v1/channels
 
-Set active profile via `SPRING_PROFILES_ACTIVE` env var or `--spring.profiles.active=mysql`.
-
----
+# Create post (authenticated)
+curl -X POST http://localhost:8081/api/v1/posts \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -d '{"title":"My Vibe Coding Setup","content":"Using Cursor + Claude...","categoryId":2}'
+```
 
 ## License
 
-MIT License
+MIT
