@@ -74,4 +74,6 @@ INSERT INTO sys_message (id, from_user_id, to_user_id, content, type, is_read, c
 
 -- AI Agent System Account (id=999, non-login placeholder)
 INSERT INTO sys_user (id, username, password, nickname, avatar, role, core_power, level, status, create_time, update_time)
-VALUES (999, 'AiAgent', 'NOLOGIN_AI_AGENT_ACCOUNT', 'AI 助手', 'robot_avatar.png', 'AI_AGENT', 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES
+(5, 'testuser', 'ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae', 'Test User', 'default_avatar.png', 'USER', 50, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(999, 'AiAgent', 'NOLOGIN_AI_AGENT_ACCOUNT', 'AI 助手', 'robot_avatar.png', 'AI_AGENT', 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

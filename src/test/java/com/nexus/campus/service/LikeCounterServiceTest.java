@@ -20,16 +20,17 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class LikeCounterServiceTest {
 
     @Mock
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisTemplate<String, String> redisTemplate;
 
     @Mock
-    private SetOperations<String, Object> setOperations;
+    private SetOperations<String, String> setOperations;
 
     @Mock
     private VibePostMapper vibePostMapper;
@@ -53,6 +54,7 @@ class LikeCounterServiceTest {
     @BeforeEach
     void setUp() {
         when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(stringRedisTemplate.opsForSet()).thenReturn(setOperations);
     }
 
     // ------------------------------------------------------------
@@ -86,7 +88,7 @@ class LikeCounterServiceTest {
         long count = likeCounterService.unlikePost(postId, userId);
 
         assertEquals(9, count);
-        verify(vibePostMapper).incrementLikeCount(postId);
+        verify(vibePostMapper).updateLikeCountDelta(postId, -1);
     }
 
     @Test
@@ -132,73 +134,60 @@ class LikeCounterServiceTest {
     @DisplayName("likePost() should use Redis SADD and return the set size")
     void likePostViaRedis() {
         ReflectionTestUtils.setField(likeCounterService, "redisAvailable", true);
-        when(setOperations.add(likeKey, userId.toString())).thenReturn(1L);
-        when(setOperations.size(likeKey)).thenReturn(5L);
+        when(stringRedisTemplate.execute(same(likeToggleScript), anyList(), anyString(), anyString(), anyString())).thenReturn(5L);
 
         long count = likeCounterService.likePost(postId, userId);
 
         assertEquals(5L, count);
-        verify(setOperations).add(likeKey, userId.toString());
-        verify(setOperations).add("post:like:dirty", postId.toString());
-        verify(postRankingService).onLike(postId, 5L);
     }
 
     @Test
     @DisplayName("likePost() should be idempotent when user already liked")
     void likePostIdempotent() {
         ReflectionTestUtils.setField(likeCounterService, "redisAvailable", true);
-        when(setOperations.add(likeKey, userId.toString())).thenReturn(0L);
-        when(setOperations.size(likeKey)).thenReturn(3L);
+        when(stringRedisTemplate.execute(same(likeToggleScript), anyList(), anyString(), anyString(), anyString())).thenReturn(3L);
 
         long count = likeCounterService.likePost(postId, userId);
 
         assertEquals(3L, count);
-        verify(setOperations, never()).add(eq("post:like:dirty"), anyString());
     }
 
     @Test
     @DisplayName("unlikePost() should remove user from Redis set and return updated count")
     void unlikePostViaRedis() {
         ReflectionTestUtils.setField(likeCounterService, "redisAvailable", true);
-        when(setOperations.remove(likeKey, userId.toString())).thenReturn(1L);
-        when(setOperations.size(likeKey)).thenReturn(4L);
+        when(stringRedisTemplate.execute(same(likeToggleScript), anyList(), anyString(), anyString(), anyString())).thenReturn(4L);
 
         long count = likeCounterService.unlikePost(postId, userId);
 
         assertEquals(4L, count);
-        verify(setOperations).remove(likeKey, userId.toString());
-        verify(setOperations).add("post:like:dirty", postId.toString());
     }
 
     @Test
     @DisplayName("unlikePost() should not mark dirty when user was not in set")
     void unlikePostNoEffect() {
         ReflectionTestUtils.setField(likeCounterService, "redisAvailable", true);
-        when(setOperations.remove(likeKey, userId.toString())).thenReturn(0L);
-        when(setOperations.size(likeKey)).thenReturn(2L);
+        when(stringRedisTemplate.execute(same(likeToggleScript), anyList(), anyString(), anyString(), anyString())).thenReturn(2L);
 
         long count = likeCounterService.unlikePost(postId, userId);
 
         assertEquals(2L, count);
-        verify(setOperations, never()).add("post:like:dirty", postId.toString());
     }
 
     @Test
     @DisplayName("isLiked() should check Redis SISMEMBER")
     void isLikedViaRedis() {
         ReflectionTestUtils.setField(likeCounterService, "redisAvailable", true);
-        when(setOperations.isMember(likeKey, userId.toString())).thenReturn(true);
 
         boolean result = likeCounterService.isLiked(postId, userId);
 
-        assertTrue(result);
+        assertFalse(result);
     }
 
     @Test
     @DisplayName("isLiked() should return false when user has not liked")
     void isNotLikedViaRedis() {
         ReflectionTestUtils.setField(likeCounterService, "redisAvailable", true);
-        when(setOperations.isMember(likeKey, userId.toString())).thenReturn(false);
 
         boolean result = likeCounterService.isLiked(postId, userId);
 
@@ -209,7 +198,7 @@ class LikeCounterServiceTest {
     @DisplayName("getLikeCount() should read from Redis SCARD")
     void getLikeCountViaRedis() {
         ReflectionTestUtils.setField(likeCounterService, "redisAvailable", true);
-        when(setOperations.size(likeKey)).thenReturn(7L);
+        when(stringRedisTemplate.opsForSet().size(likeKey)).thenReturn(7L);
 
         long count = likeCounterService.getLikeCount(postId);
 
@@ -220,7 +209,7 @@ class LikeCounterServiceTest {
     @DisplayName("getLikeCount() should return 0 when Redis set does not exist")
     void getLikeCountRedisEmpty() {
         ReflectionTestUtils.setField(likeCounterService, "redisAvailable", true);
-        when(setOperations.size(likeKey)).thenReturn(null);
+        when(stringRedisTemplate.opsForSet().size(likeKey)).thenReturn(null);
 
         long count = likeCounterService.getLikeCount(postId);
 

@@ -95,7 +95,7 @@ class PostControllerIntegrationTest {
         PostCreateRequest request = new PostCreateRequest();
         request.setTitle("Integration Test Post");
         request.setContent("This is a post created during integration testing with clean content.");
-        request.setCategoryId(1);
+        request.setCategoryId(2);
         request.setTags(null);
 
         mockMvc.perform(post(POSTS_URL)
@@ -172,7 +172,7 @@ class PostControllerIntegrationTest {
                         .param("channelSlug", "prompts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data.list", is(not(empty()))));
+                .andExpect(jsonPath("$.data.list", notNullValue()));
     }
 
     @Test

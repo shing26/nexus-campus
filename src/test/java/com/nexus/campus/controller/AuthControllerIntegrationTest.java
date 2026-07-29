@@ -54,7 +54,7 @@ class AuthControllerIntegrationTest {
     @DisplayName("Register with an existing username → 400")
     void registerDuplicateUser_shouldReturn400() throws Exception {
         RegisterRequest request = new RegisterRequest();
-        request.setUsername("testuser"); // exists in seed data (password: test123)
+        request.setUsername("admin"); // admin exists in seed data so registration should fail
         request.setPassword("testPass123");
         request.setNickname("Duplicate");
 
@@ -69,8 +69,8 @@ class AuthControllerIntegrationTest {
     @DisplayName("Login with correct credentials → 200 + JWT token")
     void loginValidCredentials_shouldReturn200() throws Exception {
         LoginRequest request = new LoginRequest();
-        request.setUsername("testuser");
-        request.setPassword("test123");
+        request.setUsername("shing");
+        request.setPassword("123456");
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -78,7 +78,7 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(200)))
                 .andExpect(jsonPath("$.data.token", notNullValue()))
-                .andExpect(jsonPath("$.data.username", is("testuser")))
+                .andExpect(jsonPath("$.data.username", is("shing")))
                 .andExpect(jsonPath("$.data.role", is("USER")));
     }
 
@@ -86,7 +86,7 @@ class AuthControllerIntegrationTest {
     @DisplayName("Login with wrong password → 401")
     void loginWrongPassword_shouldReturn401() throws Exception {
         LoginRequest request = new LoginRequest();
-        request.setUsername("testuser");
+        request.setUsername("shing");
         request.setPassword("wrongpassword");
 
         mockMvc.perform(post("/api/v1/auth/login")

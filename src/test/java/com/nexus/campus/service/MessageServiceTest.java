@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.springframework.context.ApplicationEventPublisher;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.nexus.campus.event.MessageEvent;
 import java.util.Arrays;
 import java.util.List;
 
@@ -63,14 +64,14 @@ class MessageServiceTest {
         assertEquals(1, result.getType());
         assertEquals(0, result.getIsRead());
 
-        ArgumentCaptor<SysMessage> captor = ArgumentCaptor.forClass(SysMessage.class);
-        verify(sysMessageMapper).insert(captor.capture());
-        SysMessage saved = captor.getValue();
-        assertEquals(fromUserId, saved.getFromUserId());
-        assertEquals(toUserId, saved.getToUserId());
-        assertEquals("Hello!", saved.getContent());
-        assertEquals(1, saved.getType());
-        assertEquals(0, saved.getIsRead());
+        // The implementation publishes a MessageEvent (not calling mapper directly)
+        ArgumentCaptor<MessageEvent> captor = ArgumentCaptor.forClass(MessageEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        MessageEvent event = captor.getValue();
+        assertEquals(fromUserId, event.getSenderId());
+        assertEquals(toUserId, event.getReceiverId());
+        assertEquals("like", event.getMsgType());
+        assertEquals("Hello!", event.getContent());
     }
 
     // ──────────────────────────────────────────────

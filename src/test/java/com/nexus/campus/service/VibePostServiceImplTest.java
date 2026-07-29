@@ -44,7 +44,7 @@ class VibePostServiceImplTest {
         PostCreateRequest request = new PostCreateRequest();
         request.setTitle("A clean post title");
         request.setContent("This is a perfectly normal post body with no issues.");
-        request.setCategoryId(1);
+        request.setCategoryId(2);
         request.setTags(null);
 
         VibePost post = VibePostService.createPost(request, testUserId);
@@ -61,7 +61,7 @@ class VibePostServiceImplTest {
         PostCreateRequest request = new PostCreateRequest();
         request.setTitle("Safe title");
         request.setContent("This post contains the word shit which should be filtered.");
-        request.setCategoryId(1);
+        request.setCategoryId(2);
         request.setTags(null);
 
         VibePost post = VibePostService.createPost(request, testUserId);
