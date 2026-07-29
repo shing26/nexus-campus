@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'motion/react';
@@ -65,6 +65,14 @@ const timeAgo = (dateStr: string) => {
   if (d < 30) return d + 'd ago';
   return new Date(dateStr).toLocaleDateString();
 };
+
+function estimateTokens(text: string): number {
+  if (!text.trim()) return 0;
+  const chineseChars = (text.match(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/g) || []).length;
+  const asciiText = text.replace(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/g, ' ');
+  const asciiWords = asciiText.split(/\s+/).filter(Boolean).length;
+  return Math.round(chineseChars * 2 + asciiWords * 1.3);
+}
 
 export default function PostDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -146,6 +154,43 @@ export default function PostDetailPage() {
     commentMutation.mutate(commentText.trim());
   };
 
+  // Prompt Playground state
+  const promptMeta = useMemo(() => {
+    if (!post?.promptMetadata) return null;
+    try { return JSON.parse(post.promptMetadata); } catch { return null; }
+  }, [post]);
+
+  const variables: string[] = promptMeta?.variables ?? [];
+
+  const [varValues, setVarValues] = useState<Record<string, string>>({});
+
+
+  const varsKey = variables.join(',');
+  useEffect(() => {
+    setVarValues((prev) => {
+      const next: Record<string, string> = {};
+      variables.forEach((v) => { next[v] = prev[v] ?? ''; });
+      return next;
+    });
+  }, [varsKey]);
+
+  const renderedPrompt = useMemo(() => {
+    let text = post?.content ?? '';
+    variables.forEach((v) => {
+      text = text.replace(new RegExp('\\{\\{' + v + '\\}\\}', 'g'), varValues[v] || '{{' + v + '}}');
+    });
+    return text;
+  }, [post?.content, variables, varValues]);
+
+  const playgroundTokens = useMemo(() => estimateTokens(renderedPrompt), [renderedPrompt]);
+
+  const [playgroundCopied, setPlaygroundCopied] = useState(false);
+  const handleCopyRendered = async () => {
+    await navigator.clipboard.writeText(renderedPrompt);
+    setPlaygroundCopied(true);
+    setTimeout(() => setPlaygroundCopied(false), 2000);
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16">
@@ -181,6 +226,9 @@ export default function PostDetailPage() {
             <span>{post.authorName}</span>
             <span className="text-slate-700">·</span>
             <span className="bg-vibe-cyan/10 border border-vibe-cyan/30 text-vibe-cyan rounded-md px-1.5 py-0.5">{post.categoryName}</span>
+            {post.postType === 'prompt' && (
+              <span className="bg-vibe-purple/10 border border-vibe-purple/30 text-vibe-purple rounded-md px-1.5 py-0.5">🤖 Template</span>
+            )}
             <span className="text-slate-700">·</span>
             <span>{timeAgo(post.createTime)}</span>
           </div>
@@ -235,6 +283,51 @@ export default function PostDetailPage() {
           <span className="text-[11px] font-mono text-vibe-emerald">AI Score: {post.aiReviewScore}/100</span>
         )}
       </div>
+
+      {/* PROMPT PLAYGROUND */}
+      {post.postType === 'prompt' && promptMeta && variables.length > 0 && (
+        <div className="max-w-3xl mx-auto mb-8">
+          <TerminalWindow title="prompt_playground — Template Variables">
+            <div className="p-4 space-y-4">
+              {/* Variable Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {variables.map((v) => (
+                  <div key={v} className="space-y-1.5">
+                    <label className="text-xs font-mono text-slate-400">{v}</label>
+                    <input
+                      value={varValues[v] ?? ''}
+                      onChange={(e) => setVarValues((prev) => ({ ...prev, [v]: e.target.value }))}
+                      placeholder={'Enter ' + v + '...'}
+                      className="w-full px-3 py-2 bg-vibe-bg border border-vibe-border rounded-lg text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 transition-colors"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Live Preview */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-mono text-slate-500">// Live Preview</span>
+                  <span className="text-[10px] font-mono text-slate-600">~{playgroundTokens} tokens</span>
+                </div>
+                <pre className="w-full max-h-48 overflow-y-auto p-3 bg-vibe-bg border border-vibe-border rounded-lg text-xs font-mono text-slate-200 leading-relaxed whitespace-pre-wrap">
+                  {renderedPrompt || <span className="text-slate-600">// Fill in variables above to preview...</span>}
+                </pre>
+              </div>
+
+              {/* Copy Button */}
+              <div className="flex justify-end">
+                <button
+                  onClick={handleCopyRendered}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-vibe-cyan/20 border border-vibe-cyan/30 text-vibe-cyan text-xs font-mono hover:bg-vibe-cyan/30 transition-colors"
+                >
+                  {playgroundCopied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy Prompt</>}
+                </button>
+              </div>
+            </div>
+          </TerminalWindow>
+        </div>
+      )}
 
       {/* AI REVIEW TERMINAL */}
       {post.aiReviewed === 1 && (
@@ -316,4 +409,5 @@ export default function PostDetailPage() {
     </div>
   );
 }
+
 

@@ -70,7 +70,8 @@ public class PostController {
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) String channelSlug,
             @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "false") boolean hot) {
+            @RequestParam(defaultValue = "false") boolean hot,
+            @RequestParam(required = false) String type) {
         if (hot) {
             List<PostPageVo> hotPosts = vibePostService.getHotPosts(size);
             return ApiResponse.success(PageResult.of(page, size, hotPosts.size(), hotPosts));
@@ -81,14 +82,14 @@ public class PostController {
             if (channel == null) {
                 result = PageResult.of(page, size, 0, Collections.emptyList());
             } else {
-                result = vibePostService.getPostsByCategory(channel.getId(), page, size);
+                result = vibePostService.getPostsByCategory(channel.getId(), page, size, type);
             }
         } else if (keyword != null && !keyword.isEmpty()) {
             result = vibePostService.searchPosts(keyword, page, size);
         } else if (categoryId != null) {
-            result = vibePostService.getPostsByCategory(categoryId, page, size);
+            result = vibePostService.getPostsByCategory(categoryId, page, size, type);
         } else {
-            result = vibePostService.getActivePosts(page, size);
+            result = vibePostService.getActivePosts(page, size, type);
         }
         return ApiResponse.success(result);
     }

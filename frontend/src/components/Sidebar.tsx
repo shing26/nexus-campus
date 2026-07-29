@@ -61,6 +61,9 @@ export default function Sidebar({ className = '' }: { className?: string }) {
             <Link to="/tags" className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-mono text-slate-400 hover:bg-vibe-card hover:text-slate-200 transition-colors">
               <span className="flex items-center gap-2"><Tag className="w-3.5 h-3.5" />Hot Tags</span>
             </Link>
+            <Link to="/channel/prompts?type=prompt" className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-mono text-slate-400 hover:bg-vibe-card hover:text-slate-200 transition-colors">
+              <span className="flex items-center gap-2"><Terminal className="w-3.5 h-3.5" />Prompt Templates</span>
+            </Link>
           </nav>
         </div>
       </div>

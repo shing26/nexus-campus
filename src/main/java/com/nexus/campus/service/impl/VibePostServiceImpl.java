@@ -32,6 +32,13 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class VibePostServiceImpl implements VibePostService {
+    private void applyTypeFilter(LambdaQueryWrapper<VibePost> queryWrapper, String type) {
+        if (type != null && !"all".equals(type)) {
+            queryWrapper.eq(VibePost::getPostType, type);
+        } else if (type == null) {
+            queryWrapper.eq(VibePost::getPostType, "post"); // default: only regular posts
+        }
+    }
 
     @Autowired
     private PostSearchService postSearchService;
@@ -82,6 +89,10 @@ public class VibePostServiceImpl implements VibePostService {
         post.setViewCount(0);
         post.setLikeCount(0);
         post.setCommentCount(0);
+
+        // Set post type and prompt metadata
+        post.setPostType(request.getPostType() != null ? request.getPostType() : "post");
+        post.setPromptMetadata(request.getPromptMetadata());
 
         // 钬犫€斺€� DFA audit (SensitiveWordService) 钬犫€斺€斺€斺€斺€斺€斺€斺€斺€斺€斺€斺€斺€斺€
         PostAuditResult titleAudit   = sensitiveWordService.checkText(request.getTitle());
@@ -144,10 +155,16 @@ public class VibePostServiceImpl implements VibePostService {
 
     @Override
     public PageResult<PostPageVo> getActivePosts(int page, int size) {
+        return getActivePosts(page, size, null);
+    }
+
+    @Override
+    public PageResult<PostPageVo> getActivePosts(int page, int size, String type) {
         Page<VibePost> mpPage = vibePostMapper.selectPage(
                 new Page<>(page, size),
                 new LambdaQueryWrapper<VibePost>()
                         .eq(VibePost::getStatus, 1)
+                        .and(w -> applyTypeFilter(w, type))
                         .orderByDesc(VibePost::getCreateTime)
         );
         List<PostPageVo> vos = convertToPageVos(mpPage.getRecords());
@@ -157,11 +174,18 @@ public class VibePostServiceImpl implements VibePostService {
     @Override
     @Deprecated
     public PageResult<PostPageVo> getPostsByCategory(Integer categoryId, int page, int size) {
+        return getPostsByCategory(categoryId, page, size, null);
+    }
+
+    @Override
+    @Deprecated
+    public PageResult<PostPageVo> getPostsByCategory(Integer categoryId, int page, int size, String type) {
         Page<VibePost> mpPage = vibePostMapper.selectPage(
                 new Page<>(page, size),
                 new LambdaQueryWrapper<VibePost>()
                         .eq(VibePost::getStatus, 1)
                         .eq(VibePost::getCategoryId, categoryId)
+                        .and(w -> applyTypeFilter(w, type))
                         .orderByDesc(VibePost::getCreateTime)
         );
         List<PostPageVo> vos = convertToPageVos(mpPage.getRecords());

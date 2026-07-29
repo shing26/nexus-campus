@@ -103,3 +103,5 @@ ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `code_snippets` text;
 ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `ai_reviewed` tinyint NOT NULL DEFAULT 0;
 ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `ai_review_score` int NOT NULL DEFAULT 0;
 ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `token_count` int NOT NULL DEFAULT 0;
+ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `post_type` varchar(10) NOT NULL DEFAULT 'post';
+ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `prompt_metadata` text;

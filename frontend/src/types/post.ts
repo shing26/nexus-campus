@@ -13,6 +13,8 @@
    createTime: string;
    aiReviewed: number;
    aiReviewScore: number;
+   postType?: string;
+   promptMetadata?: string;
  }
  
  export interface Channel {

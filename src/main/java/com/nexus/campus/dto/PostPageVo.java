@@ -33,4 +33,8 @@ public class PostPageVo implements Serializable {
     
     /** Whether the safety check approved the post: 1 = clean/approved, 0 = flagged, null = unchecked */
     private Integer safetyIsApproved;
+
+    private String postType;
+
+    private String promptMetadata;
 }

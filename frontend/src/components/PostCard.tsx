@@ -30,6 +30,8 @@ export default function PostCard({ post }: PostCardProps) {
   const scoreColor = post.aiReviewScore >= 80 ? 'text-vibe-emerald' : post.aiReviewScore >= 50 ? 'text-yellow-400' : 'text-red-400';
   const shortSummary = stripHtml(post.summary || post.content).slice(0, SUMMARY_LENGTH);
 
+  const meta = post.promptMetadata ? (() => { try { return JSON.parse(post.promptMetadata); } catch { return null; } })() : null;
+
   return (
     <div className="relative">
       {post.aiReviewed === 1 && <BorderBeam size={150} duration={6} />}
@@ -51,10 +53,16 @@ export default function PostCard({ post }: PostCardProps) {
           <span className="bg-vibe-cyan/10 border border-vibe-cyan/30 text-vibe-cyan rounded-md px-2 py-0.5">
             {post.categoryName}
           </span>
+          {post.postType === 'prompt' && (
+            <span className="bg-vibe-purple/10 border border-vibe-purple/30 text-vibe-purple rounded-md px-2 py-0.5 text-[10px] font-mono">🤖 Template</span>
+          )}
           {post.aiReviewed === 1 && (
             <span className={'font-mono ' + scoreColor}>AI: {post.aiReviewScore}</span>
           )}
           <span className="text-slate-500">{post.authorName}</span>
+          {meta?.role && (
+            <span className="text-slate-500 truncate max-w-[120px]" title={meta.role}>role: {meta.role}</span>
+          )}
           <span className="text-slate-600">·</span>
           <span className="text-slate-500">{timeAgo(post.createTime)}</span>
           <div className="ml-auto flex items-center gap-2 text-slate-500">

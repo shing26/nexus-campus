@@ -19,7 +19,11 @@ public interface VibePostService {
 
     PageResult<PostPageVo> getActivePosts(int page, int size);
 
+    PageResult<PostPageVo> getActivePosts(int page, int size, String type);
+
     PageResult<PostPageVo> getPostsByCategory(Integer categoryId, int page, int size);
+
+    PageResult<PostPageVo> getPostsByCategory(Integer categoryId, int page, int size, String type);
 
     PageResult<PostPageVo> searchPosts(String keyword, int page, int size);
 

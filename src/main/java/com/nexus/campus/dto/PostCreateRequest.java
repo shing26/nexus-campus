@@ -21,5 +21,9 @@ public class PostCreateRequest implements Serializable {
     @NotBlank(message = "Content is required")
     private String content;
 
+    private String postType;
+
+    private String promptMetadata;
+
     private List<Integer> tags;
 }

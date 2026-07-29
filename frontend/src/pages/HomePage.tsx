@@ -6,13 +6,14 @@ import PostCard from '../components/PostCard';
 import Sidebar from '../components/Sidebar';
 import { Sparkles } from 'lucide-react';
 
-type Tab = 'hot' | 'latest' | 'ai-verified' | 'debug';
+type Tab = 'hot' | 'latest' | 'ai-verified' | 'debug' | 'prompts';
 
 const tabs: { key: Tab; label: string }[] = [
   { key: 'hot', label: '🔥 Hot (Decay)' },
   { key: 'latest', label: '⚡ Latest' },
   { key: 'ai-verified', label: '🤖 AI Verified' },
   { key: 'debug', label: '💬 Debug' },
+  { key: 'prompts', label: '📋 Prompts' },
 ];
 
 function SkeletonCard() {
@@ -46,6 +47,11 @@ export default function HomePage() {
     queryFn: async () => {
       const params: Record<string, any> = { size: 10 };
       if (activeTab === 'hot') params.hot = true;
+      if (activeTab === 'prompts') {
+        params.type = 'prompt';
+      } else {
+        params.type = 'post';
+      }
       const res = await apiClient.get('/posts', { params });
       return res.data.data;
     },

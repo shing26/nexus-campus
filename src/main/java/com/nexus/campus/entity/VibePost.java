@@ -64,6 +64,10 @@ public class VibePost implements Serializable {
     @TableField(exist = false)
     private String authorName;
 
+    private String postType;
+
+    private String promptMetadata;
+
     @TableField(exist = false)
     private String categoryName;
 }

@@ -68,6 +68,13 @@ export default function CreatePostPage() {
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor");
 
+  // Post type state
+  const [postType, setPostType] = useState<"post" | "prompt">("post");
+  const [promptRole, setPromptRole] = useState("");
+  const [recommendedModel, setRecommendedModel] = useState("");
+  const [temperature, setTemperature] = useState(0.7);
+  const [variablesStr, setVariablesStr] = useState("");
+
   const displayChannels = useMemo(() => {
     if (!channels) return [];
     return isAdmin ? channels : channels.filter((ch: Channel) => ch.slug !== "announcements");
@@ -85,10 +92,10 @@ export default function CreatePostPage() {
     const after = content.slice(end);
     let insertion: string, cursorOffset: number;
     if (selected) {
-      insertion = "```\n" + selected + "\n```";
+      insertion = "`\n" + selected + "\n`";
       cursorOffset = start + insertion.length;
     } else {
-      insertion = "```\n\n```";
+      insertion = "`\n\n`";
       cursorOffset = start + 4;
     }
     setContent(before + insertion + after);
@@ -122,7 +129,13 @@ export default function CreatePostPage() {
     setSubmitting(true);
     setError("");
     try {
-      const res = await apiClient.post("/posts", { title: title.trim(), categoryId, content });
+      const body: any = { title: title.trim(), categoryId, content };
+      if (postType === "prompt") {
+        body.postType = "prompt";
+        const variables = variablesStr.split(",").map((v) => v.trim()).filter(Boolean);
+        body.promptMetadata = JSON.stringify({ role: promptRole.trim(), recommendedModel: recommendedModel.trim(), temperature, variables });
+      }
+      const res = await apiClient.post("/posts", body);
       navigate("/post/" + res.data.data.id);
     } catch (err: any) {
       setError("// Error: " + (err.response?.data?.message || "Failed to create post"));
@@ -164,6 +177,24 @@ export default function CreatePostPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Post type toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPostType("post")}
+            className={"px-3 py-1.5 rounded-lg text-xs font-mono transition-colors " + (postType === "post" ? "bg-vibe-cyan/20 text-vibe-cyan border border-vibe-cyan/40" : "bg-vibe-card text-slate-400 border border-vibe-border")}
+          >
+            📝 Post
+          </button>
+          <button
+            type="button"
+            onClick={() => setPostType("prompt")}
+            className={"px-3 py-1.5 rounded-lg text-xs font-mono transition-colors " + (postType === "prompt" ? "bg-vibe-purple/20 text-vibe-purple border border-vibe-purple/40" : "bg-vibe-card text-slate-400 border border-vibe-border")}
+          >
+            🤖 Prompt Template
+          </button>
+        </div>
+
         {/* METADATA WINDOW */}
         <TerminalWindow title="config.json — Metadata">
           <div className="p-4 space-y-3">
@@ -205,6 +236,66 @@ export default function CreatePostPage() {
                 className="w-full pl-9 pr-3 py-2 bg-vibe-bg border border-vibe-border rounded-lg text-xs font-mono text-slate-300 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 transition-colors"
               />
             </div>
+
+            {/* Prompt-specific fields */}
+            {postType === "prompt" && (
+              <div className="border-t border-vibe-border pt-3 space-y-3">
+                <h4 className="text-[10px] font-mono font-semibold text-slate-500 uppercase tracking-widest">Prompt Config</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-mono text-slate-500">Role</label>
+                    <textarea
+                      value={promptRole}
+                      onChange={(e) => setPromptRole(e.target.value)}
+                      placeholder="System prompt role description..."
+                      rows={2}
+                      className="w-full px-3 py-2 bg-vibe-bg border border-vibe-border rounded-lg text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 transition-colors resize-none"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-mono text-slate-500">Model</label>
+                    <select
+                      value={recommendedModel}
+                      onChange={(e) => setRecommendedModel(e.target.value)}
+                      className="w-full px-3 py-2 bg-vibe-bg border border-vibe-border rounded-lg text-xs font-mono text-slate-300 focus:outline-none focus:ring-1 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 transition-colors"
+                    >
+                      <option value="" className="bg-vibe-bg">Select model...</option>
+                      <option value="gpt-4o" className="bg-vibe-bg">gpt-4o</option>
+                      <option value="gpt-4o-mini" className="bg-vibe-bg">gpt-4o-mini</option>
+                      <option value="claude-3.5-sonnet" className="bg-vibe-bg">claude-3.5-sonnet</option>
+                      <option value="claude-3.5-haiku" className="bg-vibe-bg">claude-3.5-haiku</option>
+                      <option value="claude-4-opus" className="bg-vibe-bg">claude-4-opus</option>
+                      <option value="gemini-2.0-flash" className="bg-vibe-bg">gemini-2.0-flash</option>
+                      <option value="deepseek-v3" className="bg-vibe-bg">deepseek-v3</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-mono text-slate-500">Temperature (0-1)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={temperature}
+                      onChange={(e) => setTemperature(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-vibe-bg border border-vibe-border rounded-lg text-xs font-mono text-slate-200 focus:outline-none focus:ring-1 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-mono text-slate-500">Variables (comma-separated)</label>
+                    <input
+                      type="text"
+                      value={variablesStr}
+                      onChange={(e) => setVariablesStr(e.target.value)}
+                      placeholder="e.g. language, framework, style"
+                      className="w-full px-3 py-2 bg-vibe-bg border border-vibe-border rounded-lg text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </TerminalWindow>
 
@@ -318,3 +409,4 @@ export default function CreatePostPage() {
     </div>
   );
 }
+
