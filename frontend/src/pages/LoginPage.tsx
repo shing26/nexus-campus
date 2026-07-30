@@ -1,110 +1,97 @@
-﻿import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { apiClient } from '../api/client';
-import { useAuthStore } from '../stores/authStore';
-import type { ApiResponse } from '../api/client';
-
-interface LoginData {
-  token: string;
-  username: string;
-  role: string;
-}
+﻿import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { apiClient } from "../api/client";
+import { useAuthStore } from "../stores/authStore";
+import { useThemeStore } from "../stores/themeStore";
+import { Sun, Moon } from "lucide-react";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const setAuth = useAuthStore((s) => s.setAuth);
-
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const { dark, toggle } = useThemeStore();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    if (!username.trim()) {
-      setError('请输入用户名');
-      return;
-    }
-    if (!password) {
-      setError('请输入密码');
-      return;
-    }
-
+    setError("");
+    if (!username.trim()) { setError("Enter username"); return; }
+    if (!password) { setError("Enter password"); return; }
     setLoading(true);
     try {
-      const res = await apiClient.post<ApiResponse<LoginData>>('/auth/login', {
-        username: username.trim(),
-        password,
-      });
-      const data = res.data.data;
-      setAuth(data.token, { username: data.username });
-      const from = (location.state as any)?.from || '/';
+      const res = await apiClient.post("/auth/login", { username: username.trim(), password });
+      const d = res.data.data;
+      setAuth(d.token, { username: d.username, role: d.role });
+      const from = (location.state as any)?.from || "/";
       navigate(from, { replace: true });
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        '登录失败，请检查用户名和密码';
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
+      setError(err?.response?.data?.message || "Login failed");
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4 py-12">
+    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">登录</h1>
-
-        <form onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm px-4 py-3 mb-4 rounded-lg">
-              {error}
+        {/* Terminal-style header */}
+        <div className="bg-vibe-surface border border-vibe-border rounded-xl overflow-hidden">
+          <div className="flex items-center h-9 bg-vibe-card border-b border-vibe-border px-3">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+              <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
             </div>
-          )}
-
-          <div className="mb-4">
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-0 py-2 text-sm border-0 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 bg-transparent focus:outline-none focus:border-emerald-600 transition-colors placeholder-gray-400 dark:placeholder-gray-500 rounded-none"
-              placeholder="用户名"
-              autoComplete="username"
-            />
+            <span className="flex-1 text-center text-[11px] font-mono text-slate-500">auth_login.sh</span>
+            <button onClick={toggle} className="p-1 rounded hover:bg-vibe-card/50 transition-colors">
+              {dark ? <Sun className="w-3 h-3 text-slate-500" /> : <Moon className="w-3 h-3 text-slate-500" />}
+            </button>
           </div>
+          <div className="p-6 space-y-4">
+            <h1 className="text-sm font-mono font-semibold text-slate-100">
+              <span className="text-vibe-cyan">$</span> Login
+            </h1>
 
-          <div className="mb-6">
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-0 py-2 text-sm border-0 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 bg-transparent focus:outline-none focus:border-emerald-600 transition-colors placeholder-gray-400 dark:placeholder-gray-500 rounded-none"
-              placeholder="密码"
-              autoComplete="current-password"
-            />
+            <form onSubmit={handleSubmit} className="space-y-3">
+              {error && (
+                <div className="bg-red-900/30 border border-red-500/40 text-red-400 px-3 py-2 rounded-lg text-[11px] font-mono">
+                  ! {error}
+                </div>
+              )}
+
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="username"
+                className="w-full px-3 py-2 bg-vibe-bg border border-vibe-border rounded-lg text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 transition-colors"
+                autoComplete="username"
+              />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="password"
+                className="w-full px-3 py-2 bg-vibe-bg border border-vibe-border rounded-lg text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 transition-colors"
+                autoComplete="current-password"
+              />
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-2 px-4 rounded-lg bg-vibe-cyan/20 border border-vibe-cyan/30 text-vibe-cyan text-xs font-mono hover:bg-vibe-cyan/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {loading ? "Authenticating..." : "Login"}
+              </button>
+            </form>
+
+            <p className="text-center text-[11px] font-mono text-slate-500">
+              No account?{" "}
+              <Link to="/register" className="text-vibe-cyan hover:underline">Register</Link>
+            </p>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 px-4 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? '登录中...' : '登录'}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-          还没有账号？{' '}
-          <Link to="/register" className="text-emerald-600 hover:text-emerald-500 font-medium">
-            注册
-          </Link>
-        </p>
+        </div>
       </div>
     </div>
   );
