@@ -10,9 +10,9 @@ export default {
            surface: '#111622',
            card: '#161C2A',
            border: '#232D42',
-           cyan: '#06B6D4',
+           cyan: '#10B981',
            purple: '#A855F7',
-           emerald: '#10B981',
+           emerald: '#059669',
          }
        },
        animation: {

@@ -15,57 +15,58 @@ export default function Sidebar({ className = '' }: { className?: string }) {
   const location = useLocation();
 
   return (
-    <aside className={'w-56 shrink-0 ' + className}>
-      <div className="bg-vibe-surface border border-vibe-border rounded-xl p-4 space-y-5">
-        {/* Channels */}
-        <div>
-          <h3 className="text-[10px] font-mono font-semibold text-slate-500 uppercase tracking-widest mb-2.5">Channels</h3>
-          <nav className="space-y-0.5">
-            {channels.map((ch) => {
-              const Icon = ch.icon;
-              const isActive = location.pathname === '/channel/' + ch.slug;
-              return (
-                <Link
-                  key={ch.slug}
-                  to={'/channel/' + ch.slug}
-                  className={
-                    'flex flex-col px-2.5 py-1.5 rounded-md text-xs font-mono transition-colors ' +
-                    (isActive
-                      ? 'bg-vibe-cyan/10 text-vibe-cyan'
-                      : 'text-slate-400 hover:bg-vibe-card hover:text-slate-200')
-                  }
-                >
-                  <span className="flex items-center justify-between">
-                    <span className="flex items-center gap-2"><Icon className="w-3.5 h-3.5" />{ch.label}</span>
-                    <span className="text-[10px] bg-vibe-cyan/15 text-vibe-cyan rounded-full px-1.5 py-0.5">{ch.count}</span>
-                  </span>
-                  <span className="text-[10px] text-slate-600 truncate ml-5">{ch.desc}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+    <aside className={'w-12 shrink-0 ' + className}>
+      <div className="bg-vibe-surface border border-vibe-border rounded-xl py-3 flex flex-col items-center gap-1">
+        {channels.map((ch) => {
+          const Icon = ch.icon;
+          const isActive = location.pathname === '/channel/' + ch.slug;
+          return (
+            <Link
+              key={ch.slug}
+              to={'/channel/' + ch.slug}
+              title={ch.label + ' — ' + ch.desc}
+              className={
+                'relative group w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-all active:scale-[0.92] ' +
+                (isActive
+                  ? 'bg-vibe-cyan/15 text-vibe-cyan ring-1 ring-vibe-cyan/30'
+                  : 'text-slate-500 hover:bg-vibe-card hover:text-slate-200')
+              }
+            >
+              <Icon className="w-4 h-4" />
+              <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-vibe-card border border-vibe-border text-[10px] font-mono text-slate-300 whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none z-50 shadow-lg">
+                {ch.label}
+                <span className="ml-1.5 text-vibe-cyan/70">{ch.count}</span>
+              </span>
+            </Link>
+          );
+        })}
 
-        {/* Quick Menu */}
-        <div>
-          <h3 className="text-[10px] font-mono font-semibold text-slate-500 uppercase tracking-widest mb-2.5">Quick</h3>
-          <nav className="space-y-0.5">
-            <Link to="/drafts" className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-mono text-slate-400 hover:bg-vibe-card hover:text-slate-200 transition-colors">
-              <span className="flex items-center gap-2"><FileText className="w-3.5 h-3.5" />My Drafts</span>
-              <span className="text-[10px] text-slate-500">3</span>
-            </Link>
-            <Link to="/agent-logs" className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-mono text-slate-400 hover:bg-vibe-card hover:text-slate-200 transition-colors">
-              <span className="flex items-center gap-2"><Activity className="w-3.5 h-3.5" />Agent Logs</span>
-              <span className="text-[10px] text-slate-500">12</span>
-            </Link>
-            <Link to="/tags" className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-mono text-slate-400 hover:bg-vibe-card hover:text-slate-200 transition-colors">
-              <span className="flex items-center gap-2"><Tag className="w-3.5 h-3.5" />Hot Tags</span>
-            </Link>
-            <Link to="/channel/prompts?type=prompt" className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-mono text-slate-400 hover:bg-vibe-card hover:text-slate-200 transition-colors">
-              <span className="flex items-center gap-2"><Terminal className="w-3.5 h-3.5" />Prompt Templates</span>
-            </Link>
-          </nav>
-        </div>
+        <div className="w-6 h-px bg-vibe-border my-1" />
+
+        <Link
+          to="/drafts"
+          title="My Drafts"
+          className="relative group w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-vibe-card hover:text-slate-200 transition-all active:scale-[0.92]"
+        >
+          <FileText className="w-4 h-4" />
+          <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-vibe-card border border-vibe-border text-[10px] font-mono text-slate-300 whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none z-50 shadow-lg">My Drafts <span className="text-slate-500">3</span></span>
+        </Link>
+        <Link
+          to="/agent-logs"
+          title="Agent Logs"
+          className="relative group w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-vibe-card hover:text-slate-200 transition-all active:scale-[0.92]"
+        >
+          <Activity className="w-4 h-4" />
+          <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-vibe-card border border-vibe-border text-[10px] font-mono text-slate-300 whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none z-50 shadow-lg">Agent Logs <span className="text-slate-500">12</span></span>
+        </Link>
+        <Link
+          to="/tags"
+          title="Hot Tags"
+          className="relative group w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-vibe-card hover:text-slate-200 transition-all active:scale-[0.92]"
+        >
+          <Tag className="w-4 h-4" />
+          <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-vibe-card border border-vibe-border text-[10px] font-mono text-slate-300 whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none z-50 shadow-lg">Hot Tags</span>
+        </Link>
       </div>
     </aside>
   );

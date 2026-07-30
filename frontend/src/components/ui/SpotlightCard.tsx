@@ -9,7 +9,7 @@ interface SpotlightCardProps {
 export const SpotlightCard: React.FC<SpotlightCardProps> = ({
   children,
   className = '',
-  spotlightColor = 'rgba(6, 182, 212, 0.15)',
+  spotlightColor = 'rgba(16, 185, 129, 0.12)',
 }) => {
   const divRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -27,13 +27,13 @@ export const SpotlightCard: React.FC<SpotlightCardProps> = ({
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setOpacity(1)}
       onMouseLeave={() => setOpacity(0)}
-      className={`relative overflow-hidden rounded-xl border border-vibe-border bg-vibe-surface/90 p-5 transition-colors duration-300 ${className}`}
+      className={'relative overflow-hidden rounded-xl border border-vibe-border bg-vibe-surface/90 p-4 transition-colors duration-300 ' + className}
     >
       <div
         className="pointer-events-none absolute -inset-px transition-opacity duration-300 z-0"
         style={{
           opacity,
-          background: `radial-gradient(500px circle at ${position.x}px ${position.y}px, ${spotlightColor}, transparent 40%)`,
+          background: 'radial-gradient(500px circle at ' + position.x + 'px ' + position.y + 'px, ' + spotlightColor + ', transparent 40%)',
         }}
       />
       <div className="relative z-10">{children}</div>
