@@ -1,9 +1,16 @@
 ﻿import { motion } from 'motion/react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import Navbar from '../Navbar';
 import Footer from '../Footer';
 
 export default function MainLayout() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -14,4 +21,3 @@ export default function MainLayout() {
     </div>
   );
 }
-
