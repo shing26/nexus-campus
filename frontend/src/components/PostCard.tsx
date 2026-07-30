@@ -3,6 +3,7 @@ import type { PostPageVo } from '../types/post';
 import { SpotlightCard } from './ui/SpotlightCard';
 import { BorderBeam } from './ui/BorderBeam';
 import { Heart, MessageCircle, Eye } from 'lucide-react';
+import { useToastStore } from '../stores/toastStore';
 
 interface PostCardProps {
   post: PostPageVo;
@@ -15,6 +16,7 @@ function stripHtml(text: string): string {
 }
 
 export default function PostCard({ post }: PostCardProps) {
+  const addToast = useToastStore((s) => s.addToast);
   const timeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const minutes = Math.floor(diff / 60000);
@@ -31,6 +33,13 @@ export default function PostCard({ post }: PostCardProps) {
   const shortSummary = stripHtml(post.summary || post.content).slice(0, SUMMARY_LENGTH);
 
   const meta = post.promptMetadata ? (() => { try { return JSON.parse(post.promptMetadata); } catch { return null; } })() : null;
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(window.location.origin + '/post/' + post.id);
+    addToast('Link copied to clipboard', 'success');
+  };
 
   return (
     <div className="relative">
@@ -66,6 +75,11 @@ export default function PostCard({ post }: PostCardProps) {
           <span className="text-slate-600">·</span>
           <span className="text-slate-500">{timeAgo(post.createTime)}</span>
           <div className="ml-auto flex items-center gap-2 text-slate-500">
+            <button onClick={handleCopyLink} className="hover:text-vibe-cyan transition-colors" title="Copy link">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+            </button>
             <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{post.likeCount}</span>
             <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" />{post.commentCount}</span>
             <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{post.viewCount}</span>

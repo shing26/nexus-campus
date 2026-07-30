@@ -7,6 +7,7 @@ import MainLayout from './components/layout/MainLayout';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminRouteGuard from './components/AdminRouteGuard';
 import ErrorBoundary from './components/ErrorBoundary';
+import ToastContainer from './components/ToastContainer';
 import NotFoundPage from './pages/NotFoundPage';
 import HomePage from './pages/HomePage';
 import ChannelPage from './pages/ChannelPage';
@@ -43,6 +44,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ErrorBoundary>
+          <ToastContainer />
           <Routes>
             <Route element={<MainLayout />}>
               <Route path="/" element={<HomePage />} />

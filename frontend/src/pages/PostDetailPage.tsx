@@ -9,6 +9,7 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Heart, Share2, MessageCircle, Eye, Copy, Check } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useAuthStore } from '../stores/authStore';
+import { useToastStore } from '../stores/toastStore';
 import Pagination from '../components/Pagination';
 import Avatar from '../components/Avatar';
 import { AiReviewTerminal } from '../components/AiReviewTerminal';
@@ -78,6 +79,7 @@ export default function PostDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
+  const addToast = useToastStore((s) => s.addToast);
   
   const [commentPage, setCommentPage] = useState(1);
   const [commentText, setCommentText] = useState('');
@@ -127,8 +129,9 @@ export default function PostDetailPage() {
     onSuccess: () => {
       setCommentText('');
       setCommentPage(1);
-      queryClient.invalidateQueries({ queryKey: ['comments', id] });
-      if (post) {
+    queryClient.invalidateQueries({ queryKey: ['comments', id] });
+    addToast('Comment posted', 'success');
+    if (post) {
         queryClient.setQueryData<PostPageVo>(['post', id], { ...post, commentCount: post.commentCount + 1 });
       }
     },
@@ -145,6 +148,7 @@ export default function PostDetailPage() {
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopiedLink(true);
+    addToast('Link copied', 'success');
     setTimeout(() => setCopiedLink(false), 2000);
   };
 

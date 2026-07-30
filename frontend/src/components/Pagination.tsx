@@ -22,29 +22,29 @@
      return range;
    };
  
-   return (
-     <div className="flex items-center justify-center gap-1 mt-6 text-sm text-gray-400 dark:text-gray-500">
+  return (
+    <div className="flex items-center justify-center gap-1 mt-6 text-xs font-mono text-slate-500">
        {page > 1 && (
-         <button onClick={() => onPageChange(page - 1)} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-           上一页
+        <button onClick={() => onPageChange(page - 1)} className="hover:text-vibe-cyan transition-colors px-2 py-1">
+          上一页
          </button>
        )}
        {getPageNumbers().map((p, i) =>
          typeof p === 'string' ? (
-           <span key={`ellipsis-${i}`} className="px-1">{p}</span>
+          <span key={`ellipsis-${i}`} className="px-1 text-slate-600">{p}</span>
          ) : (
            <button
              key={p}
              onClick={() => onPageChange(p)}
-             className={p === page ? 'font-bold text-gray-900 dark:text-gray-100 px-1' : 'hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors px-1'}
+            className={p === page ? 'font-bold text-slate-100 px-2 py-1' : 'hover:text-vibe-cyan transition-colors px-2 py-1'}
            >
              {p}
            </button>
          )
        )}
        {page < pages && (
-         <button onClick={() => onPageChange(page + 1)} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-           下一页
+        <button onClick={() => onPageChange(page + 1)} className="hover:text-vibe-cyan transition-colors px-2 py-1">
+          下一页
          </button>
        )}
      </div>

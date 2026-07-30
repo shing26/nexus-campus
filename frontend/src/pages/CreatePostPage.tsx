@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { apiClient } from "../api/client";
 import { useAuthStore } from "../stores/authStore";
+import { useToastStore } from "../stores/toastStore";
 import { useChannels, type Channel } from "../api/useChannels";
 import {
   Terminal, Sparkles, Tag, Code2, Save, Send,
@@ -57,6 +58,7 @@ export default function CreatePostPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "ADMIN";
+  const addToast = useToastStore((s) => s.addToast);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [title, setTitle] = useState("");
@@ -136,9 +138,11 @@ export default function CreatePostPage() {
         body.promptMetadata = JSON.stringify({ role: promptRole.trim(), recommendedModel: recommendedModel.trim(), temperature, variables });
       }
       const res = await apiClient.post("/posts", body);
+      addToast('Post published!', 'success');
       navigate("/post/" + res.data.data.id);
     } catch (err: any) {
       setError("// Error: " + (err.response?.data?.message || "Failed to create post"));
+      addToast('Failed to publish', 'error');
     } finally {
       setSubmitting(false);
     }

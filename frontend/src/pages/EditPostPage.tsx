@@ -109,8 +109,8 @@ export default function EditPostPage() {
       <h1 className="text-3xl font-bold text-slate-200 mb-8"><span className="text-vibe-cyan">$</span> Edit Post</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+      {error && (
+          <div className="bg-red-900/30 border border-red-500/40 text-red-400 px-4 py-3 rounded-lg text-[11px] font-mono">
             {error}
           </div>
         )}
@@ -144,10 +144,10 @@ export default function EditPostPage() {
         </div>
 
         <div className="flex items-center gap-2 border border-vibe-border rounded-t-lg bg-vibe-surface px-4 py-2">
-          <button
+           <button
             type="button"
             onClick={insertCodeBlock}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-300 bg-vibe-surface border border-vibe-border rounded-md hover:bg-vibe-card/50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono text-slate-300 bg-vibe-surface border border-vibe-border rounded-md hover:bg-vibe-card/50 transition-colors"
             title="Insert code block"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,26 +155,26 @@ export default function EditPostPage() {
             </svg>
             Code Block
           </button>
-          <span className="text-xs text-gray-400 ml-auto">
+          <span className="text-[10px] font-mono text-slate-600 ml-auto">
             ~{tokens} tokens
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-x border-vibe-border rounded-b-lg overflow-hidden">
-          <textarea
+            <textarea
             ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Write your post content in Markdown..."
-            className="w-full h-96 p-4 border-r border-vibe-border font-mono text-sm resize-none focus:outline-none focus:ring-0 border-0"
+            className="w-full h-96 p-4 bg-vibe-bg border-r border-vibe-border font-mono text-sm text-slate-200 resize-none focus:outline-none focus:ring-0 border-0"
           />
-          <div className="h-96 overflow-y-auto p-4 bg-vibe-surface prose prose-sm max-w-none">
+          <div className="h-96 overflow-y-auto p-4 bg-vibe-bg prose prose-invert prose-sm max-w-none">
             {content ? (
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {content}
               </ReactMarkdown>
             ) : (
-              <p className="text-gray-400 italic">Preview will appear here...</p>
+              <p className="text-slate-600 italic font-mono text-xs">// Preview will appear here...</p>
             )}
           </div>
         </div>
@@ -183,14 +183,14 @@ export default function EditPostPage() {
           <button
             type="button"
             onClick={() => navigate(`/post/${id}`)}
-            className="px-6 py-3 border border-vibe-border text-slate-300 font-medium rounded-lg hover:bg-vibe-surface transition-colors"
+            className="px-6 py-3 border border-vibe-border text-slate-400 text-xs font-mono rounded-lg hover:bg-vibe-surface transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="px-6 py-3 bg-gradient-to-r from-vibe-cyan to-vibe-purple text-xs font-mono text-white hover:bg-gradient-to-r from-vibe-cyan to-vibe-purple disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 rounded-lg bg-vibe-cyan/20 border border-vibe-cyan/30 text-vibe-cyan text-xs font-mono hover:bg-vibe-cyan/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {submitting ? 'Saving...' : 'Save Changes'}
           </button>

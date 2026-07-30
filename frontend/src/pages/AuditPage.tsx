@@ -22,10 +22,10 @@ interface PendingPostsResponse {
 }
 
 const safetyTagColors: Record<string, string> = {
-  'Prompt injection': 'bg-red-100 text-red-800 ring-red-600/20',
-  'Harmful content': 'bg-red-100 text-red-800 ring-red-600/20',
-  Spam: 'bg-orange-100 text-orange-800 ring-orange-600/20',
-  Safe: 'bg-green-100 text-green-800 ring-green-600/20',
+  'Prompt injection': 'bg-red-900/30 text-red-400 ring-red-500/40',
+  'Harmful content': 'bg-red-900/30 text-red-400 ring-red-500/40',
+  Spam: 'bg-orange-900/30 text-orange-400 ring-orange-500/40',
+  Safe: 'bg-vibe-emerald/10 text-vibe-emerald ring-vibe-emerald/30',
 };
 
 const safetyStatusMap: Record<string, { label: string; dotColor: string } | null> = {
@@ -45,12 +45,12 @@ function SafetyBadge({ classification }: { classification: string | null }) {
   return (
     <div className="flex items-center gap-3">
       <span
-        className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${tagColor}`}
+        className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-mono ring-1 ring-inset ${tagColor}`}
       >
         {classification}
       </span>
       {statusInfo && (
-        <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-slate-500">
           <span className={`inline-block w-2 h-2 rounded-full ${statusInfo.dotColor}`} />
           {statusInfo.label}
         </span>
@@ -97,10 +97,10 @@ export default function AuditPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Audit Queue</h1>
+      <div>
+        <h1 className="text-base font-semibold font-mono text-slate-100 mb-8"><span className="text-vibe-cyan">$</span> Audit Queue</h1>
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-vibe-cyan" />
         </div>
       </div>
     );
@@ -108,11 +108,11 @@ export default function AuditPage() {
 
   if (isError) {
     return (
-      <div className="max-w-7xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Audit Queue</h1>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-700 font-medium">Failed to load pending posts</p>
-          <p className="text-red-500 text-sm mt-1">
+      <div>
+        <h1 className="text-base font-semibold font-mono text-slate-100 mb-8"><span className="text-vibe-cyan">$</span> Audit Queue</h1>
+        <div className="bg-red-900/30 border border-red-500/40 rounded-lg p-6 text-center">
+          <p className="text-red-400 font-mono text-sm">Failed to load pending posts</p>
+          <p className="text-red-500 text-xs font-mono mt-1">
             {(error as Error)?.message || 'An unexpected error occurred'}
           </p>
         </div>
@@ -124,11 +124,11 @@ export default function AuditPage() {
 
   if (posts.length === 0) {
     return (
-      <div className="max-w-7xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Audit Queue</h1>
-        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-          <p className="text-gray-500 text-lg">No pending posts to review.</p>
-          <p className="text-gray-400 text-sm mt-1">
+      <div>
+        <h1 className="text-base font-semibold font-mono text-slate-100 mb-8"><span className="text-vibe-cyan">$</span> Audit Queue</h1>
+        <div className="bg-vibe-surface border border-vibe-border rounded-lg p-12 text-center">
+          <p className="text-slate-400 font-mono text-sm">No pending posts to review.</p>
+          <p className="text-slate-600 text-[11px] font-mono mt-1">
             All caught up -- new posts will appear here when submitted.
           </p>
         </div>
@@ -137,11 +137,11 @@ export default function AuditPage() {
   }
 
   return (
-    <div className="max-w-7xl">
+    <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Audit Queue</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <h1 className="text-base font-semibold font-mono text-slate-100"><span className="text-vibe-cyan">$</span> Audit Queue</h1>
+          <p className="text-slate-500 text-xs font-mono mt-1">
             {posts.length} post{posts.length !== 1 ? 's' : ''} pending review
           </p>
         </div>
@@ -151,12 +151,12 @@ export default function AuditPage() {
         {posts.map((post) => (
           <div
             key={post.id}
-            className="bg-white border border-gray-200 rounded-lg p-6"
+            className="bg-vibe-surface border border-vibe-border rounded-lg p-6"
           >
             <div className="flex items-start justify-between gap-6">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <h3 className="text-lg font-semibold text-gray-900 truncate">
+                  <h3 className="text-sm font-semibold font-mono text-slate-200 truncate">
                     {post.title}
                   </h3>
                   <SafetyBadge
@@ -164,16 +164,16 @@ export default function AuditPage() {
                     
                   />
                 </div>
-                <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                <div className="flex items-center gap-4 mt-1 text-xs font-mono text-slate-500">
                   <span>by {post.authorName}</span>
                   {post.categoryName && (
                     <span className="inline-flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
                       {post.categoryName}
                     </span>
                   )}
                   <span className="inline-flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
                     {new Date(post.createTime).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
@@ -183,8 +183,8 @@ export default function AuditPage() {
                     })}
                   </span>
                 </div>
-                <p className="mt-3 text-gray-600 text-sm line-clamp-3">
-                  {post.summary || 'No content preview available'}
+                <p className="mt-3 text-slate-400 text-xs font-mono leading-relaxed line-clamp-3">
+                {post.summary || 'No content preview available'}
                 </p>
               </div>
 
@@ -192,13 +192,13 @@ export default function AuditPage() {
                 <button
                   onClick={() => handleApprove(post.id)}
                   disabled={auditMutation.isPending}
-                  className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 bg-vibe-emerald/20 border border-vibe-emerald/30 text-vibe-emerald text-xs font-mono rounded-lg hover:bg-vibe-emerald/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Approve
                 </button>
                 <button
                   onClick={() => setRejectId(rejectId === post.id ? null : post.id)}
-                  className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                  className="px-4 py-2 bg-red-900/30 border border-red-500/40 text-red-400 text-xs font-mono rounded-lg hover:bg-red-900/50 transition-colors"
                 >
                   Reject
                 </button>
@@ -206,8 +206,8 @@ export default function AuditPage() {
             </div>
 
             {rejectId === post.id && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mt-4 pt-4 border-t border-vibe-border">
+                <label className="block text-xs font-mono text-slate-400 mb-2">
                   Reason for rejection
                 </label>
                 <div className="flex gap-3">
@@ -216,7 +216,7 @@ export default function AuditPage() {
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
                     placeholder="Enter reason..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="flex-1 px-3 py-2 bg-vibe-bg border border-vibe-border rounded-lg text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 transition-colors"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && rejectReason.trim()) {
                         handleReject(post.id);
@@ -226,7 +226,7 @@ export default function AuditPage() {
                   <button
                     onClick={() => handleReject(post.id)}
                     disabled={auditMutation.isPending || !rejectReason.trim()}
-                    className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-4 py-2 bg-red-900/30 border border-red-500/40 text-red-400 text-xs font-mono rounded-lg hover:bg-red-900/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Confirm
                   </button>
@@ -235,7 +235,7 @@ export default function AuditPage() {
                       setRejectId(null);
                       setRejectReason('');
                     }}
-                    className="px-4 py-2 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                    className="px-4 py-2 text-slate-500 text-xs font-mono rounded-lg hover:bg-vibe-card transition-colors"
                   >
                     Cancel
                   </button>

@@ -2,13 +2,13 @@
 import { Terminal, Palette, Cpu, Zap, Bug, BookOpen, Megaphone, FileText, Activity, Tag } from 'lucide-react';
 
 const channels = [
-  { slug: 'announcements', label: 'Announcements', icon: Megaphone, count: 3 },
-  { slug: 'prompts', label: 'Prompt 工坊', icon: Terminal, count: 128 },
-  { slug: 'showcase', label: '作品展示', icon: Palette, count: 64 },
-  { slug: 'agents', label: 'Agent 实战', icon: Cpu, count: 48 },
-  { slug: 'vibe-coding', label: 'Vibe Coding', icon: Zap, count: 72 },
-  { slug: 'debug', label: '代码急诊室', icon: Bug, count: 36 },
-  { slug: 'resources', label: '资源聚合', icon: BookOpen, count: 24 },
+  { slug: 'announcements', label: 'Announcements', icon: Megaphone, count: 3, desc: '平台公告与更新' },
+  { slug: 'prompts', label: 'Prompt 工坊', icon: Terminal, count: 128, desc: 'System Prompt 设计、CoT' },
+  { slug: 'showcase', label: '作品展示', icon: Palette, count: 64, desc: 'Vibe Coding 成品展示' },
+  { slug: 'agents', label: 'Agent 实战', icon: Cpu, count: 48, desc: 'Agent 架构与案例' },
+  { slug: 'vibe-coding', label: 'Vibe Coding', icon: Zap, count: 72, desc: 'AI Coding 经验分享' },
+  { slug: 'debug', label: '代码急诊室', icon: Bug, count: 36, desc: 'Bug 诊断与修复讨论' },
+  { slug: 'resources', label: '资源聚合', icon: BookOpen, count: 24, desc: '学习资源与工具收集' },
 ];
 
 export default function Sidebar({ className = '' }: { className?: string }) {
@@ -29,17 +29,17 @@ export default function Sidebar({ className = '' }: { className?: string }) {
                   key={ch.slug}
                   to={'/channel/' + ch.slug}
                   className={
-                    'flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-mono transition-colors ' +
+                    'flex flex-col px-2.5 py-1.5 rounded-md text-xs font-mono transition-colors ' +
                     (isActive
                       ? 'bg-vibe-cyan/10 text-vibe-cyan'
                       : 'text-slate-400 hover:bg-vibe-card hover:text-slate-200')
                   }
                 >
-                  <span className="flex items-center gap-2">
-                    <Icon className="w-3.5 h-3.5" />
-                    {ch.label}
+                  <span className="flex items-center justify-between">
+                    <span className="flex items-center gap-2"><Icon className="w-3.5 h-3.5" />{ch.label}</span>
+                    <span className="text-[10px] bg-vibe-cyan/15 text-vibe-cyan rounded-full px-1.5 py-0.5">{ch.count}</span>
                   </span>
-                  <span className="text-[10px] bg-vibe-cyan/15 text-vibe-cyan rounded-full px-1.5 py-0.5">{ch.count}</span>
+                  <span className="text-[10px] text-slate-600 truncate ml-5">{ch.desc}</span>
                 </Link>
               );
             })}

@@ -3,12 +3,14 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { apiClient } from "../api/client";
 import { useAuthStore } from "../stores/authStore";
 import { useThemeStore } from "../stores/themeStore";
+import { useToastStore } from "../stores/toastStore";
 import { Sun, Moon } from "lucide-react";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const addToast = useToastStore((s) => s.addToast);
   const { dark, toggle } = useThemeStore();
   const [username, setUsername] = useState("");
   const [nickname, setNickname] = useState("");
@@ -31,6 +33,7 @@ export default function RegisterPage() {
       });
       const d = res.data.data;
       setAuth(d.token, { username: d.username, role: d.role });
+      addToast('Account created!', 'success');
       const from = (location.state as any)?.from || "/";
       navigate(from, { replace: true });
     } catch (err: any) {
