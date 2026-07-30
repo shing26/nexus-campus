@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useThemeStore } from '../stores/themeStore';
@@ -24,9 +24,9 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-vibe-bg border-b border-vibe-border sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-12">
+   <nav className="bg-vibe-bg border-b border-vibe-border sticky top-0 z-50">
+     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+       <div className="flex items-center justify-between h-12">
           {/* Logo */}
           <Link to="/" className="text-base font-bold text-slate-100 font-mono shrink-0">
             Nexus.<span className="text-vibe-cyan">Vibe</span>
@@ -40,7 +40,7 @@ export default function Navbar() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="⌘K  Search prompts, code..."
+                placeholder="?K  Search prompts, code..."
                 className="w-full pl-9 pr-3 py-1.5 text-xs bg-vibe-surface border border-vibe-border rounded-md text-slate-300 placeholder-slate-500 font-mono focus:outline-none focus:ring-1 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 transition-colors"
               />
             </div>
@@ -55,7 +55,7 @@ export default function Navbar() {
             </div>
 
             {/* Dark mode toggle */}
-            <button onClick={toggle} className="p-1.5 rounded-md hover:bg-vibe-surface transition-colors">
+            <button onClick={toggle} className="p-1.5 rounded-md hover:bg-vibe-surface transition-colors active:scale-[0.97]">
               {dark ? <Sun className="w-3.5 h-3.5 text-slate-400" /> : <Moon className="w-3.5 h-3.5 text-slate-400" />}
             </button>
 
@@ -80,7 +80,7 @@ export default function Navbar() {
             ) : (
               <div className="flex items-center gap-2">
                 <Link to={'/user/' + user?.id} className="text-xs font-mono text-slate-400 hover:text-slate-200">{user?.username}</Link>
-                <button onClick={handleLogout} className="text-[10px] font-mono text-slate-600 hover:text-red-400">Logout</button>
+                <button onClick={handleLogout} className="text-[10px] font-mono text-slate-600 hover:text-red-400 active:scale-[0.97]">Logout</button>
               </div>
             )}
           </div>

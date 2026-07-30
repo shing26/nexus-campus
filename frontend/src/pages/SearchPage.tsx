@@ -5,6 +5,7 @@
  import PostCard from '../components/PostCard';
  import Pagination from '../components/Pagination';
  import Sidebar from '../components/Sidebar';
+ import EmptyState from '../components/EmptyState';
  
  export default function SearchPage() {
    const [searchParams] = useSearchParams();
@@ -28,7 +29,7 @@
    });
  
    return (
-     <div className="max-w-7xl mx-auto px-4 py-8">
+     <div className="max-w-[1400px] mx-auto px-4 py-8">
        <div className="flex gap-6">
          <div className="w-64 shrink-0 hidden lg:block">
            <Sidebar />
@@ -43,9 +44,11 @@
            ) : isLoading ? (
              <div className="space-y-3">
                {[1, 2, 3].map((i) => (
-                 <div key={i} className="animate-pulse bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
-                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
-                   <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/3" />
+                 <div key={i} className="bg-vibe-surface/50 border border-vibe-border rounded-xl p-5 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-vibe-cyan/5 to-transparent bg-[length:200%_100%] animate-shimmer" />
+                   <div className="h-3 bg-vibe-card rounded w-3/4 mb-3 relative" />
+                   <div className="h-2.5 bg-vibe-card/50 rounded w-1/2 mb-2 relative" />
+                   <div className="h-2 bg-vibe-card/30 rounded w-1/4 relative" />
                  </div>
                ))}
              </div>
@@ -63,7 +66,7 @@
                />
              </>
            ) : (
-             <p className="text-gray-500 dark:text-gray-400 text-center py-12 text-sm">没有找到 &ldquo;{keyword}&rdquo; 的相关内容</p>
+             <EmptyState preset="noResults" />
            )}
          </div>
        </div>

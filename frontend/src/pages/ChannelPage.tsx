@@ -1,11 +1,12 @@
  import { useState } from 'react';
  import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { motion } from 'motion/react';
-import { apiClient } from '../api/client';
+ import { useQuery } from '@tanstack/react-query';
+ import { motion } from 'motion/react';
+ import { apiClient } from '../api/client';
  import PostCard from '../components/PostCard';
  import Pagination from '../components/Pagination';
  import Sidebar from '../components/Sidebar';
+ import EmptyState from '../components/EmptyState';
  import type { Channel } from '../types/post';
  
  export default function ChannelPage() {
@@ -37,7 +38,7 @@ import { apiClient } from '../api/client';
  
    if (!slug) {
      return (
-       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
+       <div className="max-w-[1400px] mx-auto px-4 py-16 text-center">
          <p className="text-gray-500 dark:text-gray-400 text-sm">未指定频道</p>
        </div>
      );
@@ -45,7 +46,7 @@ import { apiClient } from '../api/client';
  
    if (channels && !channel) {
      return (
-       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
+       <div className="max-w-[1400px] mx-auto px-4 py-16 text-center">
          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">频道未找到</h2>
          <p className="text-gray-500 dark:text-gray-400 text-sm">频道 &ldquo;{slug}&rdquo; 不存在</p>
        </div>
@@ -53,7 +54,7 @@ import { apiClient } from '../api/client';
    }
  
    return (
-     <div className="max-w-7xl mx-auto px-4 py-8">
+     <div className="max-w-[1400px] mx-auto px-4 py-8">
        <div className="flex gap-6">
          <div className="w-64 shrink-0 hidden lg:block">
            <Sidebar />
@@ -68,9 +69,11 @@ import { apiClient } from '../api/client';
            {isLoading ? (
              <div className="space-y-3">
                {[1, 2, 3].map((i) => (
-                 <div key={i} className="animate-pulse bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
-                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
-                   <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/3" />
+                 <div key={i} className="bg-vibe-surface/50 border border-vibe-border rounded-xl p-5 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-vibe-cyan/5 to-transparent bg-[length:200%_100%] animate-shimmer" />
+                   <div className="h-3 bg-vibe-card rounded w-3/4 mb-3 relative" />
+                   <div className="h-2.5 bg-vibe-card/50 rounded w-1/2 mb-2 relative" />
+                   <div className="h-2 bg-vibe-card/30 rounded w-1/4 relative" />
                  </div>
                ))}
              </div>
@@ -95,7 +98,7 @@ import { apiClient } from '../api/client';
                />
              </>
            ) : (
-             <p className="text-gray-500 dark:text-gray-400 text-center py-12 text-sm">这个频道还没有帖子</p>
+             <EmptyState preset="noPosts" />
            )}
          </div>
        </div>

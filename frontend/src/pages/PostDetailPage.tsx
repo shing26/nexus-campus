@@ -12,9 +12,10 @@ import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import Pagination from '../components/Pagination';
 import Avatar from '../components/Avatar';
-import { AiReviewTerminal } from '../components/AiReviewTerminal';
-
-import type { PostPageVo } from '../types/post';
+ import { AiReviewTerminal } from '../components/AiReviewTerminal';
+ import EmptyState from '../components/EmptyState';
+ 
+ import type { PostPageVo } from '../types/post';
 
 const AI_USER_ID = 999;
 
@@ -49,7 +50,7 @@ function CopyButton({ code }: { code: string }) {
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <button onClick={handleCopy} className="absolute top-2 right-2 px-2 py-1 text-xs font-mono bg-vibe-card/80 text-slate-400 hover:text-white hover:bg-vibe-card transition-colors rounded-md border border-vibe-border">
+     <button onClick={handleCopy} className="absolute top-2 right-2 px-2 py-1 text-xs font-mono bg-vibe-card/80 text-slate-400 hover:text-white hover:bg-vibe-card transition-colors rounded-md border border-vibe-border active:scale-[0.97]">
       {copied ? <><Check className="w-3 h-3 inline" /> Copied</> : <><Copy className="w-3 h-3 inline" /> Copy</>}
     </button>
   );
@@ -196,9 +197,9 @@ export default function PostDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="max-w-5xl mx-auto px-4 py-16">
-        <div className="animate-pulse space-y-4">
+   return (
+     <div className="max-w-[1400px] mx-auto px-4 py-16">
+       <div className="animate-pulse space-y-4">
           <div className="h-6 bg-vibe-card rounded w-3/4" />
           <div className="h-4 bg-vibe-card/50 rounded w-1/2" />
           <div className="h-64 bg-vibe-card/30 rounded" />
@@ -207,9 +208,9 @@ export default function PostDetailPage() {
     );
   }
 
-  if (!post) {
-    return (
-      <div className="max-w-5xl mx-auto px-4 py-16 text-center">
+   if (!post) {
+     return (
+       <div className="max-w-[1400px] mx-auto px-4 py-16 text-center">
         <h2 className="text-lg font-bold font-mono text-slate-100 mb-2">404 — Post Not Found</h2>
         <p className="text-sm font-mono text-slate-500">This post may have been deleted or never existed.</p>
       </div>
@@ -219,8 +220,8 @@ export default function PostDetailPage() {
   const comments = commentsData?.list ?? [];
   const totalComments = post.commentCount;
 
-  return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+   return (
+     <div className="max-w-[1400px] mx-auto px-4 py-8">
       {/* HEADER ROW */}
       <div className="flex items-center gap-3 mb-6">
         <Avatar name={post.authorName} size="md" />
@@ -274,11 +275,22 @@ export default function PostDetailPage() {
       {/* INTERACTIVE DOCK */}
       <div className="max-w-3xl mx-auto flex items-center justify-between mb-8 px-2">
         <div className="flex items-center gap-4">
-          <button onClick={handleLike} className="inline-flex items-center gap-1.5 text-xs font-mono text-slate-400 hover:text-red-400 transition-colors">
-            <Heart className={'w-4 h-4 ' + (liked ? 'fill-red-500 text-red-500' : '')} />
-            {likeCount || post.likeCount}
-          </button>
-          <button onClick={handleCopyLink} className="inline-flex items-center gap-1.5 text-xs font-mono text-slate-400 hover:text-vibe-cyan transition-colors">
+         <motion.button
+           onClick={handleLike}
+           whileTap={{ scale: 0.8 }}
+           className="inline-flex items-center gap-1.5 text-xs font-mono text-slate-400 hover:text-red-400 transition-colors active:scale-[0.97]"
+         >
+           <motion.span
+             key={liked ? 'liked' : 'not-liked'}
+             initial={{ scale: 0.5 }}
+             animate={{ scale: 1 }}
+             transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+           >
+             <Heart className={'w-4 h-4 ' + (liked ? 'fill-red-500 text-red-500' : '')} />
+           </motion.span>
+           {likeCount || post.likeCount}
+         </motion.button>
+         <button onClick={handleCopyLink} className="inline-flex items-center gap-1.5 text-xs font-mono text-slate-400 hover:text-vibe-cyan transition-colors active:scale-[0.97]">
             {copiedLink ? <Check className="w-4 h-4 text-vibe-cyan" /> : <Share2 className="w-4 h-4" />}
             {copiedLink ? 'Copied!' : 'Share'}
           </button>
@@ -323,7 +335,7 @@ export default function PostDetailPage() {
               <div className="flex justify-end">
                 <button
                   onClick={handleCopyRendered}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-vibe-cyan/20 border border-vibe-cyan/30 text-vibe-cyan text-xs font-mono hover:bg-vibe-cyan/30 transition-colors"
+                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-vibe-cyan/20 border border-vibe-cyan/30 text-vibe-cyan text-xs font-mono hover:bg-vibe-cyan/30 transition-colors active:scale-[0.97]"
                 >
                   {playgroundCopied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy Prompt</>}
                 </button>
@@ -367,7 +379,7 @@ export default function PostDetailPage() {
             <button
               onClick={handleCommentSubmit}
               disabled={!commentText.trim() || commentMutation.isPending}
-              className="px-4 py-1.5 rounded-lg bg-vibe-cyan/20 border border-vibe-cyan/30 text-vibe-cyan text-xs font-mono hover:bg-vibe-cyan/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+             className="px-4 py-1.5 rounded-lg bg-vibe-cyan/20 border border-vibe-cyan/30 text-vibe-cyan text-xs font-mono hover:bg-vibe-cyan/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97]"
             >
               {commentMutation.isPending ? 'Posting...' : 'Post Comment'}
             </button>
@@ -403,7 +415,7 @@ export default function PostDetailPage() {
             })}
           </div>
         ) : (
-          <p className="text-center text-xs font-mono text-slate-600 py-8">// No comments yet. Share your thoughts.</p>
+         <EmptyState preset="noComments" className="py-8" />
         )}
 
         {commentsData && commentsData.pages > 1 && (
