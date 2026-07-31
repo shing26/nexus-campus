@@ -41,3 +41,24 @@
    size: number;
    pages: number;
  }
+
+ export interface AiLog {
+   id: number;
+   postId: number;
+   postTitle: string;
+   reviewer: string;
+   severity: string;
+   isApproved: number;
+   createdAt: string;
+ }
+
+ export interface AiLogStats {
+   totalReviews: number;
+   approved: number;
+   flagged: number;
+   critical: number;
+   high: number;
+   medium: number;
+   low: number;
+   unknown: number;
+ }

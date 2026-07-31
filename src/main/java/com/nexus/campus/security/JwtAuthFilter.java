@@ -48,6 +48,7 @@ public class JwtAuthFilter implements Filter {
             if (("GET".equalsIgnoreCase(request.getMethod()))
                     && (path.startsWith("/api/v1/posts")
                         || path.startsWith("/api/v1/comments")
+                        || path.startsWith("/api/v1/agent-logs")
                         || path.startsWith("/api/v1/channels"))) {
                 chain.doFilter(request, response);
                 return;

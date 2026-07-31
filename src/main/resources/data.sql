@@ -1,4 +1,5 @@
 -- Clear old data
+DELETE FROM ai_review_log;
 DELETE FROM sys_message;
 DELETE FROM vibe_comment;
 DELETE FROM vibe_post_tag;
@@ -81,6 +82,14 @@ INSERT INTO sys_message (id, from_user_id, to_user_id, content, type, is_read, c
 (1, 3, 2, 'Alice commented on your post: Building a RAG pipeline with LangChain and Claude 3', 2, 0, DATEADD('HOUR', -1, CURRENT_TIMESTAMP)),
 (2, 4, 2, 'Bob commented on your post: Building a RAG pipeline with LangChain and Claude 3', 2, 0, DATEADD('MINUTE', -30, CURRENT_TIMESTAMP)),
 (3, 2, 1, 'shing commented on your post: Claude Computer Use: building autonomous browser agents', 2, 0, DATEADD('DAY', -1, CURRENT_TIMESTAMP));
+
+-- AI Review Logs
+INSERT INTO ai_review_log (id, post_id, reviewer, result_json, severity, is_approved, created_at) VALUES
+(9001, 100, 'code-review-agent', '{"score":9,"severity":"low"}', 'low', 1, DATEADD('HOUR', -2, CURRENT_TIMESTAMP)),
+(9002, 101, 'code-review-agent', '{"score":7,"severity":"medium"}', 'medium', 1, DATEADD('HOUR', -4, CURRENT_TIMESTAMP)),
+(9003, 1, 'safety-check-agent', 'Prompt injection', 'critical', 0, DATEADD('HOUR', -6, CURRENT_TIMESTAMP)),
+(9004, 2, 'code-review-agent', '{"score":5,"severity":"unknown"}', 'unknown', 1, DATEADD('DAY', -1, CURRENT_TIMESTAMP)),
+(9005, 100, 'code-review-agent', '{"score":4,"severity":"unknown"}', 'unknown', 0, DATEADD('DAY', -2, CURRENT_TIMESTAMP));
 
 -- AI Agent System Account (id=999, non-login placeholder)
 INSERT INTO sys_user (id, username, password, nickname, avatar, role, core_power, level, status, create_time, update_time)

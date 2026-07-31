@@ -21,6 +21,7 @@ import UserProfilePage from './pages/UserProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import MessagesPage from './pages/MessagesPage';
 import AuditPage from './pages/AuditPage';
+import AgentLogsPage from './pages/AgentLogsPage';
 import DashboardPage from './pages/DashboardPage';
 
 const queryClient = new QueryClient({
@@ -64,6 +65,7 @@ export default function App() {
               <Route element={<AdminRouteGuard />}>
                 <Route path="/admin/audit" element={<AuditPage />} />
                 <Route path="/admin/dashboard" element={<DashboardPage />} />
+                <Route path="/agent-logs" element={<AgentLogsPage />} />
               </Route>
             </Route>
           </Routes>
