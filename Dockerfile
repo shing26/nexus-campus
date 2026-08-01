@@ -14,7 +14,7 @@ RUN mvn clean package -DskipTests -q
 # ---- Stage 2: Runtime ----
 FROM eclipse-temurin:18-jre
 
-ARG JAR_FILE=nexus-campus.war
+ARG JAR_FILE=nexus-campus.jar
 
 LABEL maintainer="Nexus-Campus Team" \
       description="AI-Driven Cyberpunk Campus Forum System" \
@@ -31,4 +31,4 @@ ENV SERVER_PORT=8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 CMD curl -f http://localhost:${SERVER_PORT:-8080}/ || exit 1
 
-ENTRYPOINT ["java", "-jar", "nexus-campus.war"]
+ENTRYPOINT ["java", "-jar", "nexus-campus.jar"]

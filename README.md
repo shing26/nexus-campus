@@ -65,12 +65,16 @@ frontend/
 - [x] Full-text search (ES + MySQL fallback)
 - [x] Comments with thread-style layout
 - [x] Like/unlike with Redis atomic toggle
+- [x] Prompt template Fork with source attribution
+- [x] Prompt template version history, change notes, and rollback
 
 ### AI
 - [x] **AI Code Review Agent**: Asynchronous LLM-powered post review with structured output (score, quality, security, suggestions)
 - [x] **Structured Outputs**: JSON Schema-enforced review format via OpenAI API
 - [x] **Prompt Injection Guardrails**: Delimiter-based isolation, Chain of Thought analysis
 - [x] **LLM Safety Check**: 4-class classification (Prompt injection / Harmful / Spam / Safe) with per-class handling
+- [x] **Agent run logs dashboard**: severity stats, filters, and review history
+- [x] **Prompt Playground**: variable substitution + token estimate
 
 ### Design
 - [x] Dark cyberpunk theme with `vibe` color palette
@@ -126,8 +130,69 @@ npm run dev
 ### Run with MySQL (Production)
 
 ```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=mysql
+# local MySQL + Redis, env-driven config
+$env:SPRING_PROFILES_ACTIVE="prod"
+$env:DB_URL="jdbc:mysql://localhost:3306/nexus_campus?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
+$env:DB_USERNAME="root"
+$env:DB_PASSWORD="root"
+$env:REDIS_HOST="localhost"
+mvn spring-boot:run
 ```
+
+> The MySQL schema and demo data live in `docker/mysql/init.sql`. The legacy
+> `mysql` profile is still available for local MySQL without env overrides.
+
+### Run with Docker Compose (recommended for handoff)
+
+```bash
+cp .env.example .env
+# fill in DB_PASSWORD / JWT_SECRET / LLM_API_KEY
+docker compose up --build
+```
+
+Then open `http://localhost:8080`. The stack starts:
+
+| Service | Container | Port |
+|---------|-----------|------|
+| Nginx + React SPA | `nexus-web` | 8080 |
+| Spring Boot API | `nexus-app` | internal 8080 |
+| MySQL 8 | `nexus-db` | 3306 |
+| Redis 7 | `nexus-redis` | 6379 |
+| Elasticsearch (optional) | `nexus-es` | 9200 |
+
+### Environment Variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `SPRING_PROFILES_ACTIVE` | `prod` | Spring profile |
+| `SERVER_PORT` | `8080` | API port |
+| `DB_URL` | local MySQL | JDBC URL |
+| `DB_USERNAME` / `DB_PASSWORD` | `root` / `root` | MySQL credentials |
+| `REDIS_ENABLED` | `true` | Redis features |
+| `REDIS_HOST` / `REDIS_PORT` | `redis` / `6379` | Redis connection |
+| `LLM_API_KEY` | empty | OpenAI-compatible API key |
+| `LLM_ENDPOINT` | `https://api.openai.com/v1` | Chat completions base URL |
+| `LLM_MODEL` | `gpt-4o` | Default model |
+| `JWT_SECRET` | dev default | JWT signing secret (change in prod) |
+| `UPLOAD_DIR` | `/app/uploads` | Upload storage path |
+
+If `LLM_API_KEY` is empty, the AI Review and Safety agents log a warning and
+skip LLM calls; the rest of the platform still works normally.
+
+### Handoff QA Checklist
+
+Run this before handing the project over:
+
+- [ ] `mvn test` passes (124 tests, H2 in-memory)
+- [ ] `cd frontend && npm run build` passes
+- [ ] Login as `admin/123456` and `shing/123456`
+- [ ] Create a prompt template, edit it, verify a new version appears
+- [ ] Fork a template and verify the fork badge links back to the source
+- [ ] Restore an older template version and verify content rolls back
+- [ ] Post a regular post, comment, like, and search
+- [ ] Open `/agent-logs` as admin and verify stats + filters
+- [ ] Open `/admin/audit` and approve/reject a pending post
+- [ ] `docker compose up --build` and verify the full stack on `http://localhost:8080`
 
 ## Project Structure
 

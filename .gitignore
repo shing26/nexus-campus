@@ -32,5 +32,8 @@ Thumbs.db
 # Development / scratch scripts
 fix_*.py
 
+# Local environment
+.env
+
 # Node (if any frontend assets land here)
 node_modules/
