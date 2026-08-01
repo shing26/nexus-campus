@@ -5,10 +5,10 @@ import { useAuthStore } from '../stores/authStore';
 
 interface Message {
   id: number;
-  sender: string;
+  fromUserName: string;
   content: string;
-  createdAt: string;
-  readAt: string | null;
+  isRead: number;
+  createTime: string;
 }
 
 export default function MessagesPage() {
@@ -43,20 +43,29 @@ export default function MessagesPage() {
     // Optimistically update UI
     setMessages((prev) =>
       prev.map((m) =>
-        m.id === messageId && !m.readAt
-          ? { ...m, readAt: new Date().toISOString() }
+        m.id === messageId && m.isRead === 0
+          ? { ...m, isRead: 1 }
           : m
       )
     );
     try {
-      await apiClient.put(`/messages/${messageId}`, { read: true });
+      await apiClient.post(`/messages/${messageId}/read`);
     } catch {
       // Revert on failure
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === messageId ? { ...m, readAt: null } : m
+          m.id === messageId ? { ...m, isRead: 0 } : m
         )
       );
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await apiClient.post('/messages/read-all');
+      setMessages((prev) => prev.map((m) => ({ ...m, isRead: 1 })));
+    } catch {
+      setError('Failed to mark all messages as read.');
     }
   };
 
@@ -64,7 +73,17 @@ export default function MessagesPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-base font-semibold font-mono text-slate-100 mb-8"><span className="text-vibe-cyan">$</span> Messages</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-base font-semibold font-mono text-slate-100"><span className="text-vibe-cyan">$</span> Messages</h1>
+        {messages.length > 0 && (
+          <button
+            onClick={markAllAsRead}
+            className="px-3 py-1.5 rounded-lg border border-vibe-border text-[11px] font-mono text-slate-400 hover:text-vibe-cyan hover:border-vibe-cyan/40 transition-colors"
+          >
+            Mark all read
+          </button>
+        )}
+      </div>
 
       {error && (
         <div className="bg-red-900/30 border border-red-500/40 text-red-400 px-4 py-3 rounded-lg text-[11px] font-mono mb-6">
@@ -95,8 +114,8 @@ export default function MessagesPage() {
       ) : (
         <div className="space-y-2">
           {messages.map((msg) => {
-            const isUnread = !msg.readAt;
-            const time = new Date(msg.createdAt).toLocaleString();
+            const isUnread = msg.isRead === 0;
+            const time = new Date(msg.createTime).toLocaleString();
             return (
                 <button
                   key={msg.id}
@@ -119,7 +138,7 @@ export default function MessagesPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className={`text-xs font-mono ${isUnread ? 'text-slate-200 font-semibold' : 'text-slate-500'}`}>
-                          {msg.sender}
+                          {msg.fromUserName || 'System'}
                         </span>
                         <span className="text-[10px] text-slate-600 shrink-0 font-mono">{time}</span>
                       </div>

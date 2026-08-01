@@ -14,7 +14,7 @@ interface ProfileUser {
 interface Post {
   id: number;
   title: string;
-  channel: string;
+  categoryName: string;
   createTime: string;
 }
 
@@ -122,7 +122,7 @@ export default function UserProfilePage() {
                 </span>
               </div>
               <span className="inline-block mt-1 text-[10px] font-mono text-vibe-cyan bg-vibe-cyan/15 px-2 py-0.5 rounded-full">
-                {post.channel}
+                {post.categoryName}
               </span>
             </Link>
           ))}

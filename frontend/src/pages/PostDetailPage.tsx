@@ -10,7 +10,6 @@ import { Heart, Share2, MessageCircle, Eye, Copy, Check, GitFork, History, Penci
 import { apiClient } from '../api/client';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
-import Pagination from '../components/Pagination';
 import Avatar from '../components/Avatar';
  import { AiReviewTerminal } from '../components/AiReviewTerminal';
  import EmptyState from '../components/EmptyState';
@@ -84,7 +83,6 @@ export default function PostDetailPage() {
   const user = useAuthStore((s) => s.user);
   const addToast = useToastStore((s) => s.addToast);
   
-  const [commentPage, setCommentPage] = useState(1);
   const [commentText, setCommentText] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -100,41 +98,30 @@ export default function PostDetailPage() {
     staleTime: 1000 * 60,
   });
 
-  const { data: allCommentsData } = useQuery({
-    queryKey: ['comments', id, 'all'],
-    queryFn: async () => {
-      const res = await apiClient.get('/posts/' + id + '/comments', { params: { page: 1, size: 100 } });
-      return res.data.data;
-    },
-    enabled: !!id && !!post && post.aiReviewed === 1,
-    staleTime: 1000 * 30,
-  });
-
-  const aiReviewComment = useMemo(() => {
-    if (!allCommentsData) return null;
-    return allCommentsData.list?.find((c: any) => c.userId === AI_USER_ID) || null;
-  }, [allCommentsData]);
-
   const { data: commentsData } = useQuery({
-    queryKey: ['comments', id, commentPage],
+    queryKey: ['comments', id],
     queryFn: async () => {
-      const res = await apiClient.get('/posts/' + id + '/comments', { params: { page: commentPage, size: 10 } });
+      const res = await apiClient.get('/comments/post/' + id);
       return res.data.data;
     },
     enabled: !!id,
     staleTime: 1000 * 30,
   });
 
+  const aiReviewComment = useMemo(() => {
+    if (!commentsData) return null;
+    return (commentsData as any[]).find((c: any) => c.userId === AI_USER_ID) || null;
+  }, [commentsData]);
+
   const commentMutation = useMutation({
     mutationFn: async (content: string) => {
-      await apiClient.post('/posts/' + id + '/comments', { content });
+      await apiClient.post('/comments', { postId: Number(id), content });
     },
     onSuccess: () => {
       setCommentText('');
-      setCommentPage(1);
-    queryClient.invalidateQueries({ queryKey: ['comments', id] });
-    addToast('Comment posted', 'success');
-    if (post) {
+      queryClient.invalidateQueries({ queryKey: ['comments', id] });
+      addToast('Comment posted', 'success');
+      if (post) {
         queryClient.setQueryData<PostPageVo>(['post', id], { ...post, commentCount: post.commentCount + 1 });
       }
     },
@@ -254,7 +241,7 @@ export default function PostDetailPage() {
     );
   }
 
-  const comments = commentsData?.list ?? [];
+  const comments = commentsData ?? [];
   const totalComments = post.commentCount;
 
    return (
@@ -506,9 +493,6 @@ export default function PostDetailPage() {
          <EmptyState preset="noComments" className="py-8" />
         )}
 
-        {commentsData && commentsData.pages > 1 && (
-          <Pagination page={commentsData.page} pages={commentsData.pages} onPageChange={setCommentPage} />
-        )}
       </section>
 
       <PromptVersionPanel

@@ -22,7 +22,7 @@ export default function SearchPage() {
       const res = await apiClient.get('/posts', {
         params: { keyword, page, size: 10 },
       });
-      return res.data;
+      return res.data.data;
     },
     enabled: !!keyword,
     staleTime: 1000 * 60,

@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useThemeStore } from './stores/themeStore';
+import { useAuthStore } from './stores/authStore';
+import { apiClient } from './api/client';
 import MainLayout from './components/layout/MainLayout';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminRouteGuard from './components/AdminRouteGuard';
@@ -38,10 +40,33 @@ const queryClient = new QueryClient({
 
 export default function App() {
   const dark = useThemeStore((s) => s.dark);
+  const token = useAuthStore((s) => s.token);
+  const authUser = useAuthStore((s) => s.user);
+  const setAuth = useAuthStore((s) => s.setAuth);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
   }, [dark]);
+
+  useEffect(() => {
+    if (!token || !authUser) return;
+    if (authUser.id && authUser.nickname) return;
+    apiClient
+      .get('/users/profile')
+      .then((res) => {
+        const u = res.data.data;
+        setAuth(token, {
+          id: u.id,
+          username: u.username,
+          nickname: u.nickname,
+          role: u.role,
+          avatar: u.avatar,
+          avatarUrl: u.avatar,
+          bio: u.bio,
+        });
+      })
+      .catch(() => {});
+  }, [token, authUser, setAuth]);
 
   return (
     <QueryClientProvider client={queryClient}>

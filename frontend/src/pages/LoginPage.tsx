@@ -26,7 +26,14 @@ export default function LoginPage() {
     try {
       const res = await apiClient.post("/auth/login", { username: username.trim(), password });
       const d = res.data.data;
-      setAuth(d.token, { username: d.username, role: d.role });
+      setAuth(d.token, {
+        id: d.userId,
+        username: d.username,
+        nickname: d.nickname,
+        role: d.role,
+        avatar: d.avatar,
+        avatarUrl: d.avatar,
+      });
       addToast('Welcome back!', 'success');
       const from = (location.state as any)?.from || "/";
       navigate(from, { replace: true });

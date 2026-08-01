@@ -45,7 +45,11 @@ public class AuthController {
 
     @GetMapping("/profile")
     public ApiResponse<?> getProfile(@RequestAttribute("currentUserId") Long userId) {
-        return ApiResponse.success(sysUserService.getUserById(userId));
+        SysUser user = sysUserService.getUserById(userId);
+        if (user != null) {
+            user.setPassword(null);
+        }
+        return ApiResponse.success(user);
     }
 
     @PostMapping("/refresh")

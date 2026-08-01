@@ -183,7 +183,7 @@ skip LLM calls; the rest of the platform still works normally.
 
 Run this before handing the project over:
 
-- [ ] `mvn test` passes (131 tests, H2 in-memory)
+- [ ] `mvn test` passes (134 tests, H2 in-memory)
 - [ ] `cd frontend && npm run build` passes
 - [ ] Login as `admin/123456` and `shing/123456`
 - [ ] Create a prompt template, edit it, verify a new version appears
