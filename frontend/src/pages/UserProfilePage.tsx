@@ -6,16 +6,16 @@ interface ProfileUser {
   id: number;
   username: string;
   nickname?: string;
-  avatarUrl?: string;
+  avatar?: string;
   bio?: string;
-  createdAt: string;
+  createTime: string;
 }
 
 interface Post {
   id: number;
   title: string;
   channel: string;
-  createdAt: string;
+  createTime: string;
 }
 
 export default function UserProfilePage() {
@@ -34,7 +34,7 @@ export default function UserProfilePage() {
           apiClient.get('/posts', { params: { userId: id } }),
         ]);
         setUser(userRes.data.data);
-        setPosts(postsRes.data.data || []);
+        setPosts(postsRes.data.data?.list || []);
       } catch {
         setError('Failed to load user profile.');
       } finally {
@@ -70,7 +70,7 @@ export default function UserProfilePage() {
     );
   }
 
-  const joined = new Date(user.createdAt).toLocaleDateString('en-US', {
+  const joined = new Date(user.createTime).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -82,8 +82,8 @@ export default function UserProfilePage() {
       <div className="bg-vibe-surface border border-vibe-border rounded-xl p-6 mb-8">
         <div className="flex items-center gap-6">
           <div className="w-20 h-20 rounded-full bg-vibe-cyan/20 flex items-center justify-center overflow-hidden shrink-0">
-            {user.avatarUrl ? (
-              <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
+            {user.avatar && user.avatar !== 'default_avatar.png' ? (
+              <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
             ) : (
               <span className="text-2xl font-bold text-vibe-cyan">
                 {user.username.charAt(0).toUpperCase()}
@@ -118,7 +118,7 @@ export default function UserProfilePage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold font-mono text-slate-200 truncate">{post.title}</h3>
                 <span className="text-xs text-slate-500 shrink-0 ml-4">
-                  {new Date(post.createdAt).toLocaleDateString()}
+                  {new Date(post.createTime).toLocaleDateString()}
                 </span>
               </div>
               <span className="inline-block mt-1 text-[10px] font-mono text-vibe-cyan bg-vibe-cyan/15 px-2 py-0.5 rounded-full">

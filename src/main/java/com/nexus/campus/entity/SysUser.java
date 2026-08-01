@@ -25,6 +25,8 @@ public class SysUser implements Serializable {
     @TableField(fill = FieldFill.INSERT)
     private String avatar;
 
+    private String bio;
+
     private String role;
 
     private Integer corePower;

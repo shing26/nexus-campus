@@ -71,6 +71,12 @@ public class UserController {
         if (request.getAvatar() != null && !request.getAvatar().isBlank()) {
             user.setAvatar(request.getAvatar());
         }
+        if (request.getAvatarUrl() != null && !request.getAvatarUrl().isBlank()) {
+            user.setAvatar(request.getAvatarUrl());
+        }
+        if (request.getBio() != null) {
+            user.setBio(request.getBio());
+        }
         sysUserService.updateUser(user);
         user.setPassword(null);
         return ApiResponse.success("Profile updated.", user);

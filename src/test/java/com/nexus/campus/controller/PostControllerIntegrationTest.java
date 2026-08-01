@@ -266,4 +266,68 @@ class PostControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(200)));
     }
+
+    @Test
+    @DisplayName("DELETE /api/v1/posts/{id} should remove the author's own post")
+    void deletePost_ownPost_shouldSucceed() throws Exception {
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle("Deletable Integration Post");
+        request.setContent("This post is created only to be deleted by its author.");
+        request.setCategoryId(2);
+        request.setTags(null);
+
+        MvcResult createResult = mockMvc.perform(post(POSTS_URL)
+                        .header("Authorization", "Bearer " + authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)))
+                .andReturn();
+        String postId = objectMapper.readTree(createResult.getResponse().getContentAsString())
+                .path("data").path("postId").asText();
+
+        mockMvc.perform(delete(POSTS_URL + "/" + postId)
+                        .header("Authorization", "Bearer " + authToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)));
+
+        mockMvc.perform(get(POSTS_URL + "/" + postId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(404)));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/posts/{id} should reject a non-author")
+    void deletePost_otherUsersPost_shouldReturn400() throws Exception {
+        String otherUserToken = jwtUtil.generateToken(3L, "alice", "USER");
+
+        mockMvc.perform(delete(POSTS_URL + "/1")
+                        .header("Authorization", "Bearer " + otherUserToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", is(400)))
+                .andExpect(jsonPath("$.message", containsString("author")));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/admin/dashboard should expose admin statistics")
+    void getAdminDashboard_shouldReturnStats() throws Exception {
+        String adminToken = jwtUtil.generateToken(1L, "admin", "ADMIN");
+
+        mockMvc.perform(get("/api/v1/admin/dashboard")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)))
+                .andExpect(jsonPath("$.data.totalPosts", notNullValue()))
+                .andExpect(jsonPath("$.data.pendingAudits", notNullValue()))
+                .andExpect(jsonPath("$.data.todayPosts", notNullValue()));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/admin/dashboard should reject non-admin users")
+    void getAdminDashboard_nonAdmin_shouldReturn403() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/dashboard")
+                        .header("Authorization", "Bearer " + authToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(403)));
+    }
 }

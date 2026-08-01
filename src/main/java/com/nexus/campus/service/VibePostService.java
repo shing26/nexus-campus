@@ -21,6 +21,8 @@ public interface VibePostService {
 
     boolean restorePromptVersion(Long postId, Integer version, Long userId, String changeNote);
 
+    boolean deletePost(Long postId, Long userId);
+
     List<PostPageVo> getPendingAuditPosts();
 
     boolean approvePost(Long postId);

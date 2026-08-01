@@ -330,6 +330,29 @@ public class VibePostServiceImpl implements VibePostService {
         return true;
     }
 
+    @Override
+    @Transactional
+    @CacheEvict(value = "posts", allEntries = true)
+    public boolean deletePost(Long postId, Long userId) {
+        VibePost post = vibePostMapper.selectById(postId);
+        if (post == null) {
+            return false;
+        }
+        SysUser user = sysUserMapper.selectById(userId);
+        boolean isAdmin = user != null && "ADMIN".equals(user.getRole());
+        if (!isAdmin && !post.getUserId().equals(userId)) {
+            throw new IllegalStateException("Only the author can delete this post.");
+        }
+
+        promptVersionMapper.delete(new LambdaQueryWrapper<PromptVersion>().eq(PromptVersion::getPostId, postId));
+        vibePostTagMapper.delete(new LambdaQueryWrapper<VibePostTag>().eq(VibePostTag::getPostId, postId));
+        vibeCommentMapper.delete(new LambdaQueryWrapper<VibeComment>().eq(VibeComment::getPostId, postId));
+        aiReviewLogMapper.delete(new LambdaQueryWrapper<AiReviewLog>().eq(AiReviewLog::getPostId, postId));
+        vibePostMapper.deleteById(postId);
+        postSearchService.deletePost(postId);
+        return true;
+    }
+
     private void saveVersionSnapshot(VibePost post, Long userId, String changeNote) {
         PromptVersion version = new PromptVersion();
         version.setPostId(post.getId());

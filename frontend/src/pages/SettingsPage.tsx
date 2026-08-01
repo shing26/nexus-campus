@@ -36,7 +36,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (user) {
       setNickname(user.nickname || '');
-      setAvatarUrl(user.avatarUrl || '');
+      setAvatarUrl(user.avatarUrl || user.avatar || '');
     }
   }, [user]);
 

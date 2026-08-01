@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Heart, Share2, MessageCircle, Eye, Copy, Check, GitFork, History } from 'lucide-react';
+import { Heart, Share2, MessageCircle, Eye, Copy, Check, GitFork, History, Pencil, Trash2 } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
@@ -161,6 +161,21 @@ export default function PostDetailPage() {
     commentMutation.mutate(commentText.trim());
   };
 
+  const canManage = !!user && (user.role === 'ADMIN' || user.id === post?.userId);
+
+  const handleDelete = async () => {
+    if (!post) return;
+    if (!window.confirm('Delete this post? This action cannot be undone.')) return;
+    try {
+      await apiClient.delete('/posts/' + post.id);
+      addToast('Post deleted', 'success');
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      navigate('/');
+    } catch (err: any) {
+      addToast(err.response?.data?.message || 'Delete failed', 'error');
+    }
+  };
+
   // Prompt Playground state
   const promptMeta = useMemo(() => {
     if (!post?.promptMetadata) return null;
@@ -296,6 +311,24 @@ export default function PostDetailPage() {
             >
               <History className="w-3.5 h-3.5" />
               History
+            </button>
+          </div>
+        )}
+        {canManage && (
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => navigate('/post/' + post.id + '/edit')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-vibe-card border border-vibe-border text-slate-300 text-[11px] font-mono hover:border-vibe-cyan/40 hover:text-vibe-cyan transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </button>
+            <button
+              onClick={handleDelete}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-[11px] font-mono hover:bg-red-500/20 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
             </button>
           </div>
         )}

@@ -20,6 +20,8 @@ import RegisterPage from './pages/RegisterPage';
 import UserProfilePage from './pages/UserProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import MessagesPage from './pages/MessagesPage';
+import DraftsPage from './pages/DraftsPage';
+import TagsPage from './pages/TagsPage';
 import AuditPage from './pages/AuditPage';
 import AgentLogsPage from './pages/AgentLogsPage';
 import DashboardPage from './pages/DashboardPage';
@@ -59,6 +61,8 @@ export default function App() {
               <Route path="/user/:id" element={<UserProfilePage />} />
               <Route path="/user/settings" element={<SettingsPage />} />
               <Route path="/user/messages" element={<MessagesPage />} />
+              <Route path="/drafts" element={<DraftsPage />} />
+              <Route path="/tags" element={<TagsPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
             <Route element={<AdminLayout />}>

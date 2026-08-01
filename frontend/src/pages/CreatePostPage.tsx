@@ -1,5 +1,5 @@
 ﻿import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { apiClient } from "../api/client";
@@ -53,8 +53,12 @@ You are an expert coding assistant. Follow these guidelines:
 ## User Request
 `;
 
+const DRAFT_KEY = "nexus_vibe_drafts";
+
 export default function CreatePostPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const draftId = searchParams.get("draft");
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "ADMIN";
@@ -84,6 +88,26 @@ export default function CreatePostPage() {
 
   const tokens = useMemo(() => estimateTokens(content), [content]);
 
+  useEffect(() => {
+    if (!draftId) return;
+    try {
+      const drafts = JSON.parse(localStorage.getItem(DRAFT_KEY) || "[]");
+      const draft = drafts.find((d: any) => String(d.id) === draftId);
+      if (!draft) return;
+      setTitle(draft.title || "");
+      setCategoryId(draft.categoryId ?? null);
+      setContent(draft.content || "");
+      setTags(draft.tags || "");
+      setPostType(draft.postType || "post");
+      setPromptRole(draft.promptRole || "");
+      setRecommendedModel(draft.recommendedModel || "");
+      setTemperature(draft.temperature ?? 0.7);
+      setVariablesStr(draft.variablesStr || "");
+    } catch {
+      // ignore malformed local drafts
+    }
+  }, [draftId]);
+
   const insertCodeBlock = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -109,6 +133,32 @@ export default function CreatePostPage() {
 
   const handleAiPolish = () => {
     setContent((prev) => (prev.trim() ? prev + "\n\n" + PROMPT_TEMPLATE : PROMPT_TEMPLATE));
+  };
+
+  const handleSaveDraft = () => {
+    const drafts = JSON.parse(localStorage.getItem(DRAFT_KEY) || "[]");
+    const payload = {
+      id: draftId ? Number(draftId) : Date.now(),
+      title,
+      categoryId,
+      content,
+      tags,
+      postType,
+      promptRole,
+      recommendedModel,
+      temperature,
+      variablesStr,
+      updatedAt: new Date().toISOString(),
+    };
+    const index = drafts.findIndex((d: any) => String(d.id) === String(payload.id));
+    if (index >= 0) {
+      drafts[index] = payload;
+    } else {
+      drafts.push(payload);
+    }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+    addToast("Draft saved", "success");
+    navigate("/post/new?draft=" + payload.id, { replace: true });
   };
 
   useEffect(() => {
@@ -138,8 +188,15 @@ export default function CreatePostPage() {
         body.promptMetadata = JSON.stringify({ role: promptRole.trim(), recommendedModel: recommendedModel.trim(), temperature, variables });
       }
       const res = await apiClient.post("/posts", body);
-      addToast('Post published!', 'success');
-      navigate("/post/" + res.data.data.id);
+      if (draftId) {
+        const drafts = JSON.parse(localStorage.getItem(DRAFT_KEY) || "[]");
+        localStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify(drafts.filter((d: any) => String(d.id) !== draftId))
+        );
+      }
+      addToast("Post published!", "success");
+      navigate("/post/" + res.data.data.postId);
     } catch (err: any) {
       setError("// Error: " + (err.response?.data?.message || "Failed to create post"));
       addToast('Failed to publish', 'error');
@@ -390,6 +447,7 @@ export default function CreatePostPage() {
             <div className="flex items-center gap-2 ml-auto">
               <button
                 type="button"
+                onClick={handleSaveDraft}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-vibe-border text-[11px] font-mono text-slate-400 hover:text-slate-200 hover:border-slate-500 transition-colors"
               >
                 <Save className="w-3.5 h-3.5" />

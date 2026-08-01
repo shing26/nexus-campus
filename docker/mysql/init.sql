@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
   `password` varchar(100) NOT NULL,
   `nickname` varchar(50) NOT NULL,
   `avatar` varchar(255) DEFAULT 'default_avatar.png',
+  `bio` varchar(255) DEFAULT NULL,
   `role` varchar(20) NOT NULL DEFAULT 'USER',
   `core_power` int NOT NULL DEFAULT 0,
   `level` int NOT NULL DEFAULT 1,

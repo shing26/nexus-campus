@@ -10,6 +10,7 @@
    commentCount: number;
    isPinned: boolean;
    status: number;
+   userId?: number;
    createTime: string;
    aiReviewed: number;
    aiReviewScore: number;

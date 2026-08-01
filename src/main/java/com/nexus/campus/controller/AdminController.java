@@ -79,6 +79,17 @@ public class AdminController {
         return ApiResponse.success(stats);
     }
 
+    @GetMapping("/dashboard")
+    public ApiResponse<Map<String, Object>> getDashboard(@RequestAttribute("currentRole") String role) {
+        ApiResponse check = checkAdmin(role);
+        if (check != null) return check;
+        Map<String, Object> dashboard = new HashMap<>();
+        dashboard.put("totalPosts", vibePostMapper.selectCount(null));
+        dashboard.put("pendingAudits", vibePostMapper.selectPendingAuditPosts().size());
+        dashboard.put("todayPosts", vibePostMapper.countTodayPosts());
+        return ApiResponse.success(dashboard);
+    }
+
     @GetMapping("/audit/posts")
     public ApiResponse<List<PostPageVo>> getPendingAuditPosts(@RequestAttribute("currentRole") String role) {
         ApiResponse check = checkAdmin(role);

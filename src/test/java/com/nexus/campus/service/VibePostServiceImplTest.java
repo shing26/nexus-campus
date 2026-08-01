@@ -156,4 +156,45 @@ class VibePostServiceImplTest {
         assertEquals("Updated RAG title", updated.getTitle());
         assertEquals(0L, promptVersionMapper.selectVersionCount(1L));
     }
+
+    @Test
+    @DisplayName("Author can delete their own post and related records are removed")
+    void deletePost_byAuthor_shouldSucceed() {
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle("Post to delete");
+        request.setContent("This post will be deleted by its author.");
+        request.setCategoryId(2);
+        request.setTags(null);
+
+        VibePost created = VibePostService.createPost(request, testUserId);
+
+        boolean deleted = VibePostService.deletePost(created.getId(), testUserId);
+
+        assertTrue(deleted);
+        assertNull(VibePostMapper.selectById(created.getId()));
+        assertEquals(0L, promptVersionMapper.selectVersionCount(created.getId()));
+    }
+
+    @Test
+    @DisplayName("Other users cannot delete a post they do not own")
+    void deletePost_byNonAuthor_shouldBeRejected() {
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle("Protected post");
+        request.setContent("Only the author should be able to delete this post.");
+        request.setCategoryId(2);
+        request.setTags(null);
+
+        VibePost created = VibePostService.createPost(request, testUserId);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> VibePostService.deletePost(created.getId(), 3L));
+        assertTrue(error.getMessage().contains("author"));
+        assertNotNull(VibePostMapper.selectById(created.getId()));
+    }
+
+    @Test
+    @DisplayName("Deleting a nonexistent post returns false")
+    void deletePost_missingPost_shouldReturnFalse() {
+        assertFalse(VibePostService.deletePost(999999999L, testUserId));
+    }
 }

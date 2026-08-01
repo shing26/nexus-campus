@@ -113,6 +113,7 @@ public class PostController {
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) String channelSlug,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long userId,
             @RequestParam(defaultValue = "false") boolean hot,
             @RequestParam(required = false) String type) {
         if (hot) {
@@ -127,6 +128,8 @@ public class PostController {
             } else {
                 result = vibePostService.getPostsByCategory(channel.getId(), page, size, type);
             }
+        } else if (userId != null) {
+            result = vibePostService.getPostsByUserId(userId, page, size);
         } else if (keyword != null && !keyword.isEmpty()) {
             result = vibePostService.searchPosts(keyword, page, size);
         } else if (categoryId != null) {
@@ -163,6 +166,17 @@ public class PostController {
         data.put("postId", id.toString());
         data.put("currentLikes", currentLikes);
         return ApiResponse.success("Energy increment synchronized.", data);
+    }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> deletePost(
+            @PathVariable Long id,
+            @RequestAttribute("currentUserId") Long userId) {
+        boolean success = vibePostService.deletePost(id, userId);
+        if (!success) {
+            return ApiResponse.notFound("Post not found.");
+        }
+        return ApiResponse.successMessage("Post deleted.");
     }
 }
 
