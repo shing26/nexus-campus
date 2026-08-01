@@ -17,6 +17,7 @@ public class PostPageVo implements Serializable {
     private Integer categoryId;
     private String categoryName;
     private String title;
+    private String content;
     private String summary;
     private Integer viewCount;
     private Integer likeCount;

@@ -373,12 +373,10 @@ public class VibePostServiceImpl implements VibePostService {
 
     @Override
     public PageResult<PostPageVo> getActivePosts(int page, int size, String type) {
-        Page<VibePost> mpPage = vibePostMapper.selectPage(
+        Page<VibePost> mpPage = vibePostMapper.selectPostPage(
                 new Page<>(page, size),
-                new LambdaQueryWrapper<VibePost>()
-                        .eq(VibePost::getStatus, 1)
-                        .and(w -> applyTypeFilter(w, type))
-                        .orderByDesc(VibePost::getCreateTime)
+                null,
+                "all".equals(type) ? null : (type == null || type.isBlank() ? "post" : type)
         );
         List<PostPageVo> vos = convertToPageVos(mpPage.getRecords());
         return PageResult.of(page, size, mpPage.getTotal(), vos);
@@ -393,13 +391,10 @@ public class VibePostServiceImpl implements VibePostService {
     @Override
     @Deprecated
     public PageResult<PostPageVo> getPostsByCategory(Integer categoryId, int page, int size, String type) {
-        Page<VibePost> mpPage = vibePostMapper.selectPage(
+        Page<VibePost> mpPage = vibePostMapper.selectPostPage(
                 new Page<>(page, size),
-                new LambdaQueryWrapper<VibePost>()
-                        .eq(VibePost::getStatus, 1)
-                        .eq(VibePost::getCategoryId, categoryId)
-                        .and(w -> applyTypeFilter(w, type))
-                        .orderByDesc(VibePost::getCreateTime)
+                categoryId,
+                "all".equals(type) ? null : (type == null || type.isBlank() ? "post" : type)
         );
         List<PostPageVo> vos = convertToPageVos(mpPage.getRecords());
         return PageResult.of(page, size, mpPage.getTotal(), vos);
@@ -416,14 +411,9 @@ public class VibePostServiceImpl implements VibePostService {
             }
         }
         // Fallback to MySQL LIKE query with pagination
-        Page<VibePost> mpPage = vibePostMapper.selectPage(
+        Page<VibePost> mpPage = vibePostMapper.selectSearchPage(
                 new Page<>(page, size),
-                new LambdaQueryWrapper<VibePost>()
-                        .eq(VibePost::getStatus, 1)
-                        .and(w -> w.like(VibePost::getTitle, keyword)
-                                .or()
-                                .like(VibePost::getContent, keyword))
-                        .orderByDesc(VibePost::getCreateTime)
+                keyword
         );
         List<PostPageVo> vos = convertToPageVos(mpPage.getRecords());
         return PageResult.of(page, size, mpPage.getTotal(), vos);

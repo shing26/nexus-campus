@@ -1,6 +1,7 @@
 package com.nexus.campus.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexus.campus.entity.VibePost;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Mapper;
@@ -19,6 +20,32 @@ public interface VibePostMapper extends BaseMapper<VibePost> {
             "WHERE p.status = 1 " +
             "ORDER BY p.is_pinned DESC, p.create_time DESC")
     List<VibePost> selectActivePosts();
+
+    @Select({"<script>",
+            "SELECT p.*, u.nickname as authorName, c.name as categoryName ",
+            "FROM vibe_post p ",
+            "LEFT JOIN sys_user u ON p.user_id = u.id ",
+            "LEFT JOIN vibe_channel c ON p.category_id = c.id ",
+            "WHERE p.status = 1 ",
+            "AND (LOWER(p.title) LIKE LOWER(CONCAT('%', #{keyword}, '%')) ",
+            "OR LOWER(p.content) LIKE LOWER(CONCAT('%', #{keyword}, '%'))) ",
+            "ORDER BY p.create_time DESC",
+            "</script>"})
+    Page<VibePost> selectSearchPage(Page<VibePost> page, @Param("keyword") String keyword);
+
+    @Select({"<script>",
+            "SELECT p.*, u.nickname as authorName, c.name as categoryName ",
+            "FROM vibe_post p ",
+            "LEFT JOIN sys_user u ON p.user_id = u.id ",
+            "LEFT JOIN vibe_channel c ON p.category_id = c.id ",
+            "WHERE p.status = 1 ",
+            "<if test='categoryId != null'> AND p.category_id = #{categoryId} </if>",
+            "<if test='postType != null'> AND p.post_type = #{postType} </if>",
+            "ORDER BY p.is_pinned DESC, p.create_time DESC",
+            "</script>"})
+    Page<VibePost> selectPostPage(Page<VibePost> page,
+                                  @Param("categoryId") Integer categoryId,
+                                  @Param("postType") String postType);
 
     @Select("SELECT p.*, u.nickname as authorName, c.name as categoryName " +
             "FROM vibe_post p " +

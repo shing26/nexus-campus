@@ -298,6 +298,7 @@ public class PostSearchService {
         PostPageVo vo = new PostPageVo();
         if (source.get("id") != null) vo.setId(((Number) source.get("id")).longValue());
         if (source.get("title") != null) vo.setTitle((String) source.get("title"));
+        if (source.get("content") != null) vo.setContent((String) source.get("content"));
         if (source.get("summary") != null) vo.setSummary((String) source.get("summary"));
         if (source.get("authorName") != null) vo.setAuthorName((String) source.get("authorName"));
         if (source.get("categoryName") != null) vo.setCategoryName((String) source.get("categoryName"));

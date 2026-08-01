@@ -1,8 +1,11 @@
-﻿import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { PostPageVo } from '../types/post';
 import { SpotlightCard } from './ui/SpotlightCard';
 import { BorderBeam } from './ui/BorderBeam';
-import { Heart, MessageCircle, Eye } from 'lucide-react';
+import { Heart, MessageCircle, Eye, Copy, Check, GitFork } from 'lucide-react';
+import { useState } from 'react';
+import { apiClient } from '../api/client';
+import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 
 interface PostCardProps {
@@ -15,8 +18,37 @@ function stripHtml(text: string): string {
   return text?.replace(/<[^>]*>/g, '') ?? '';
 }
 
+interface PreviewInfo {
+  label: string;
+  lines: string[];
+  code: string;
+}
+
+function getPreview(post: PostPageVo): PreviewInfo | null {
+  const content = post.content || '';
+  const fenced = content.match(/```([a-zA-Z0-9_+-]*)\n([\s\S]*?)```/);
+  if (fenced) {
+    const code = fenced[2].trim();
+    const lines = code.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 2);
+    return { label: fenced[1] || 'code', lines, code };
+  }
+  const plain = stripHtml(content).split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 2);
+  if (plain.length === 0) return null;
+  return {
+    label: post.postType === 'prompt' ? 'prompt' : 'text',
+    lines: plain,
+    code: plain.join('\n'),
+  };
+}
+
 export default function PostCard({ post }: PostCardProps) {
+  const navigate = useNavigate();
   const addToast = useToastStore((s) => s.addToast);
+  const user = useAuthStore((s) => s.user);
+  const [copied, setCopied] = useState(false);
+  const [forking, setForking] = useState(false);
+  const preview = getPreview(post);
+
   const timeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const minutes = Math.floor(diff / 60000);
@@ -41,11 +73,67 @@ export default function PostCard({ post }: PostCardProps) {
     addToast('Link copied to clipboard', 'success');
   };
 
+  const handleCopyPrompt = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!preview) return;
+    navigator.clipboard.writeText(preview.code);
+    setCopied(true);
+    addToast('Prompt copied', 'success');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleFork = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setForking(true);
+    try {
+      const res = await apiClient.post('/posts/' + post.id + '/fork');
+      addToast('Template forked', 'success');
+      navigate('/post/' + res.data.data.postId);
+    } catch {
+      addToast('Fork failed', 'error');
+    } finally {
+      setForking(false);
+    }
+  };
+
   return (
     <div className="relative">
       {post.aiReviewed === 1 && <BorderBeam size={150} duration={6} />}
       <div className="active:scale-[0.99] transition-transform">
-        <SpotlightCard>
+        <SpotlightCard className="group/card">
+          {/* Quick Action Bar — hover reveal */}
+          {(preview || post.postType === 'prompt') && (
+            <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 opacity-0 translate-y-1 group-hover/card:opacity-100 group-hover/card:translate-y-0 transition-all duration-200">
+              {preview && (
+                <button
+                  onClick={handleCopyPrompt}
+                  title="Copy prompt"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-vibe-card/90 backdrop-blur border border-vibe-border text-[10px] font-mono text-slate-300 hover:text-vibe-cyan hover:border-vibe-cyan/40 transition-colors active:scale-[0.95]"
+                >
+                  {copied ? <Check className="w-3 h-3 text-vibe-cyan" /> : <Copy className="w-3 h-3" />}
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+              )}
+              {post.postType === 'prompt' && (
+                <button
+                  onClick={handleFork}
+                  disabled={forking}
+                  title="Fork template"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-vibe-card/90 backdrop-blur border border-vibe-border text-[10px] font-mono text-slate-300 hover:text-vibe-purple hover:border-vibe-purple/40 transition-colors active:scale-[0.95] disabled:opacity-50"
+                >
+                  <GitFork className="w-3 h-3" />
+                  {forking ? 'Forking' : 'Fork'}
+                </button>
+              )}
+            </div>
+          )}
+
           <Link to={'/post/' + post.id} className="block">
             {/* Title as code comment */}
             <h3 className="font-mono text-sm text-slate-100 leading-snug hover:text-vibe-cyan transition-colors">
@@ -56,6 +144,34 @@ export default function PostCard({ post }: PostCardProps) {
               <p className="mt-1.5 font-mono text-[11px] text-slate-500 line-clamp-1">
                 // {shortSummary}...
               </p>
+            )}
+            {/* Terminal preview block */}
+            {preview && (
+              <div className="mt-3 rounded-lg overflow-hidden border border-vibe-border bg-vibe-bg/80">
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-vibe-card/70 border-b border-vibe-border">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500/70" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500/70" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500/70" />
+                  <span className="ml-2 text-[9px] font-mono text-slate-500 truncate">
+                    {preview.label === 'prompt' ? 'prompt.md' : preview.label === 'text' ? 'notes.txt' : preview.label + '.'}
+                  </span>
+                </div>
+                <div className="px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-400">
+                  {preview.lines.length > 0 ? (
+                    preview.lines.map((line, i) => (
+                      <div key={i} className="flex gap-2.5 truncate">
+                        <span className="text-slate-700 select-none">{i + 1}</span>
+                        <span className="truncate">{line || '\u00A0'}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex gap-2.5 truncate">
+                      <span className="text-slate-700 select-none">1</span>
+                      <span className="text-slate-600 truncate">// no preview available</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </Link>
           {/* Metadata row — compact */}

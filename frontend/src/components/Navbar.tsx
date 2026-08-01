@@ -1,22 +1,27 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useThemeStore } from '../stores/themeStore';
 import { ShimmerButton } from './ui/ShimmerButton';
 import { Plus, Search, Sun, Moon, Mail, Settings } from 'lucide-react';
+import CommandPalette from './CommandPalette';
 
 export default function Navbar() {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuthStore();
   const { dark, toggle } = useThemeStore();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate('/search?q=' + encodeURIComponent(searchQuery.trim()));
-    }
-  };
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -33,18 +38,22 @@ export default function Navbar() {
           </Link>
 
           {/* Cmd+K Search */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-lg mx-6">
+          <button
+            onClick={() => setPaletteOpen(true)}
+            className="flex-1 max-w-lg mx-6 group"
+            type="button"
+          >
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="?K  Search prompts, code..."
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-vibe-surface border border-vibe-border rounded-md text-slate-300 placeholder-slate-500 font-mono focus:outline-none focus:ring-1 focus:ring-vibe-cyan/50 focus:border-vibe-cyan/50 transition-colors"
-              />
+              <span className="w-full flex items-center justify-between pl-9 pr-3 py-1.5 text-xs bg-vibe-surface border border-vibe-border rounded-md text-slate-500 font-mono group-hover:border-vibe-cyan/40 group-hover:text-slate-400 transition-colors">
+                <span>Search prompts, code...</span>
+                <span className="flex items-center gap-1 pointer-events-none">
+                  <kbd className="px-1 py-0.5 rounded bg-vibe-card border border-vibe-border text-[9px] leading-none">⌘</kbd>
+                  <kbd className="px-1 py-0.5 rounded bg-vibe-card border border-vibe-border text-[9px] leading-none">K</kbd>
+                </span>
+              </span>
             </div>
-          </form>
+          </button>
 
           {/* Right toolbar */}
           <div className="flex items-center gap-3 shrink-0">
@@ -97,6 +106,7 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </nav>
   );
 }
