@@ -2,8 +2,11 @@ package com.nexus.campus.service;
 
 import com.nexus.campus.dto.PostAuditResult;
 import com.nexus.campus.dto.PostCreateRequest;
+import com.nexus.campus.dto.PostUpdateRequest;
 import com.nexus.campus.entity.VibePost;
 import com.nexus.campus.entity.SysUser;
+import com.nexus.campus.entity.PromptVersion;
+import com.nexus.campus.mapper.PromptVersionMapper;
 import com.nexus.campus.mapper.VibePostMapper;
 import com.nexus.campus.mapper.SysUserMapper;
 import com.nexus.campus.service.impl.VibePostServiceImpl;
@@ -28,6 +31,9 @@ class VibePostServiceImplTest {
 
     @Autowired
     private VibePostMapper VibePostMapper;
+
+    @Autowired
+    private PromptVersionMapper promptVersionMapper;
 
     private Long testUserId;
 
@@ -69,5 +75,85 @@ class VibePostServiceImplTest {
         assertNotNull(post.getId());
         assertEquals(1, post.getStatus(), "Regular sensitive words should still result in Active status");
         assertFalse(post.getContent().contains("shit"));
+    }
+
+    @Test
+    @DisplayName("Create prompt template -> version 1 snapshot is written")
+    void createPromptTemplate_shouldCreateInitialVersion() {
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle("Versioned Prompt");
+        request.setContent("Build a type-safe API client with error handling.");
+        request.setCategoryId(2);
+        request.setPostType("prompt");
+        request.setPromptMetadata("{\"role\":\"senior engineer\",\"recommendedModel\":\"gpt-4o\",\"temperature\":0.6,\"variables\":[\"language\"]}");
+
+        VibePost post = VibePostService.createPost(request, testUserId);
+
+        Long count = promptVersionMapper.selectVersionCount(post.getId());
+        assertEquals(1L, count);
+        PromptVersion version = promptVersionMapper.selectOne(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<PromptVersion>()
+                        .eq(PromptVersion::getPostId, post.getId())
+                        .eq(PromptVersion::getVersion, 1));
+        assertNotNull(version);
+        assertEquals("Versioned Prompt", version.getTitle());
+    }
+
+    @Test
+    @DisplayName("Fork prompt template -> new post with forkedFromId and version 1")
+    void forkPrompt_shouldCopyTemplateAndSetSource() {
+        VibePost fork = VibePostService.forkPrompt(100L, testUserId);
+
+        assertNotNull(fork.getId());
+        assertEquals("prompt", fork.getPostType());
+        assertEquals(100L, fork.getForkedFromId());
+        assertEquals(1L, promptVersionMapper.selectVersionCount(fork.getId()));
+        assertNotNull(fork.getPromptMetadata());
+    }
+
+    @Test
+    @DisplayName("Fork regular post -> rejected")
+    void forkPrompt_onRegularPost_shouldFail() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> VibePostService.forkPrompt(1L, testUserId));
+        assertTrue(error.getMessage().contains("prompt templates"));
+    }
+
+    @Test
+    @DisplayName("Update prompt template -> new version snapshot is appended")
+    void updatePromptTemplate_shouldAppendVersion() {
+        PostUpdateRequest request = new PostUpdateRequest();
+        request.setTitle("Tailwind UI Prompt Architect v2");
+        request.setContent("Updated template content.");
+        request.setChangeNote("Sharpen constraints");
+
+        VibePost updated = VibePostService.updatePost(101L, request, testUserId);
+
+        assertEquals("Tailwind UI Prompt Architect v2", updated.getTitle());
+        assertEquals(2L, promptVersionMapper.selectVersionCount(101L));
+    }
+
+    @Test
+    @DisplayName("Restore prompt version -> post content rolls back and a new version is appended")
+    void restorePromptVersion_shouldRollBackContent() {
+        boolean restored = VibePostService.restorePromptVersion(101L, 1, testUserId, null);
+
+        assertTrue(restored);
+        VibePost post = VibePostMapper.selectById(101L);
+        assertTrue(post.getContent().contains("Design a responsive layout"));
+        assertEquals(2L, promptVersionMapper.selectVersionCount(101L));
+    }
+
+    @Test
+    @DisplayName("Update regular post -> no version snapshot is written")
+    void updateRegularPost_shouldNotCreateVersion() {
+        PostUpdateRequest request = new PostUpdateRequest();
+        request.setTitle("Updated RAG title");
+        request.setContent("Updated plain post body.");
+
+        VibePost updated = VibePostService.updatePost(1L, request, testUserId);
+
+        assertEquals("Updated RAG title", updated.getTitle());
+        assertEquals(0L, promptVersionMapper.selectVersionCount(1L));
     }
 }

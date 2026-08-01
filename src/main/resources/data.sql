@@ -1,5 +1,6 @@
 -- Clear old data
 DELETE FROM ai_review_log;
+DELETE FROM vibe_prompt_version;
 DELETE FROM sys_message;
 DELETE FROM vibe_comment;
 DELETE FROM vibe_post_tag;
@@ -54,13 +55,34 @@ INSERT INTO vibe_post (id, title, content, user_id, category_id, status, like_co
  3, 7, 2, 0, 0, 10, 0, 'post', CURRENT_TIMESTAMP);
 
 -- Prompt Template Posts
-INSERT INTO vibe_post (id, title, content, user_id, category_id, status, like_count, comment_count, view_count, is_pinned, post_type, prompt_metadata, create_time) VALUES
+INSERT INTO vibe_post (id, title, content, user_id, category_id, status, like_count, comment_count, view_count, is_pinned, post_type, prompt_metadata, forked_from_id, create_time) VALUES
 (100, 'React Component Generator',
  'Create a React component that follows best practices. Define the component name, props interface, and any specific features you need. The component should be type-safe with TypeScript, include proper JSDoc comments, and handle loading/error/empty states.',
- 1, 2, 1, 42, 8, 560, 0, 'prompt', '{"role":"You are a senior React developer specializing in component architecture. Generate clean, composable, and well-documented React components with TypeScript. Follow SOLID principles and React best practices.","recommendedModel":"gpt-4o","temperature":0.7,"variables":["componentName","features"]}', DATEADD('DAY', -3, CURRENT_TIMESTAMP)),
+ 1, 2, 1, 42, 8, 560, 0, 'prompt', '{"role":"You are a senior React developer specializing in component architecture. Generate clean, composable, and well-documented React components with TypeScript. Follow SOLID principles and React best practices.","recommendedModel":"gpt-4o","temperature":0.7,"variables":["componentName","features"]}', NULL, DATEADD('DAY', -3, CURRENT_TIMESTAMP)),
 (101, 'Tailwind UI Prompt Architect',
  'Design a responsive layout using Tailwind CSS. Specify the layout structure, color scheme preferences, and any specific UI patterns you want to include. The generated code should be production-ready with proper responsive breakpoints and accessibility attributes.',
- 2, 2, 1, 35, 5, 420, 0, 'prompt', '{"role":"You are a Tailwind CSS expert and UI designer. Create beautiful, responsive, and accessible layouts using Tailwind CSS utility classes. Prioritize mobile-first design and adhere to WCAG 2.1 AA standards.","recommendedModel":"gpt-4o","temperature":0.5,"variables":["layout","colorScheme"]}', DATEADD('DAY', -1, CURRENT_TIMESTAMP));
+ 2, 2, 1, 35, 5, 420, 0, 'prompt', '{"role":"You are a Tailwind CSS expert and UI designer. Create beautiful, responsive, and accessible layouts using Tailwind CSS utility classes. Prioritize mobile-first design and adhere to WCAG 2.1 AA standards.","recommendedModel":"gpt-4o","temperature":0.5,"variables":["layout","colorScheme"]}', NULL, DATEADD('DAY', -1, CURRENT_TIMESTAMP)),
+(102, 'React Component Generator',
+ 'Create a React component that follows best practices. Forked from the React Component Generator template with an extra focus on keyboard accessibility and reduced motion support.',
+ 3, 2, 1, 9, 2, 140, 0, 'prompt', '{"role":"You are a senior React developer specializing in accessible component architecture. Generate clean, composable, and well-documented React components with TypeScript. Follow WCAG 2.1 AA standards and React best practices.","recommendedModel":"gpt-4o","temperature":0.6,"variables":["componentName","features","accessibilityLevel"]}', 100, DATEADD('HOUR', -8, CURRENT_TIMESTAMP));
+
+-- Prompt version history
+INSERT INTO vibe_prompt_version (id, post_id, version, branch, title, content, prompt_metadata, change_note, created_by, create_time) VALUES
+(8001, 100, 1, 'main', 'React Component Generator',
+ 'Create a React component that follows best practices. Define the component name, props interface, and any specific features you need.',
+ '{"role":"You are a senior React developer specializing in component architecture. Generate clean, composable, and well-documented React components with TypeScript.","recommendedModel":"gpt-4o","temperature":0.7,"variables":["componentName","features"]}', 'Initial version', 1, DATEADD('DAY', -5, CURRENT_TIMESTAMP)),
+(8002, 100, 2, 'main', 'React Component Generator',
+ 'Create a React component that follows best practices. Define the component name, props interface, and any specific features you need. The component should be type-safe with TypeScript.',
+ '{"role":"You are a senior React developer specializing in component architecture. Generate clean, composable, and well-documented React components with TypeScript. Follow SOLID principles.","recommendedModel":"gpt-4o","temperature":0.7,"variables":["componentName","features"]}', 'Add TypeScript safety guidance', 1, DATEADD('DAY', -4, CURRENT_TIMESTAMP)),
+(8003, 100, 3, 'main', 'React Component Generator',
+ 'Create a React component that follows best practices. Define the component name, props interface, and any specific features you need. The component should be type-safe with TypeScript, include proper JSDoc comments, and handle loading/error/empty states.',
+ '{"role":"You are a senior React developer specializing in component architecture. Generate clean, composable, and well-documented React components with TypeScript. Follow SOLID principles and React best practices.","recommendedModel":"gpt-4o","temperature":0.7,"variables":["componentName","features"]}', 'Add JSDoc and state handling', 1, DATEADD('DAY', -3, CURRENT_TIMESTAMP)),
+(8004, 101, 1, 'main', 'Tailwind UI Prompt Architect',
+ 'Design a responsive layout using Tailwind CSS. Specify the layout structure, color scheme preferences, and any specific UI patterns you want to include.',
+ '{"role":"You are a Tailwind CSS expert and UI designer. Create beautiful, responsive, and accessible layouts using Tailwind CSS utility classes.","recommendedModel":"gpt-4o","temperature":0.5,"variables":["layout","colorScheme"]}', 'Initial version', 2, DATEADD('DAY', -2, CURRENT_TIMESTAMP)),
+(8005, 102, 1, 'main', 'React Component Generator',
+ 'Create a React component that follows best practices. Forked from the React Component Generator template with an extra focus on keyboard accessibility and reduced motion support.',
+ '{"role":"You are a senior React developer specializing in accessible component architecture. Generate clean, composable, and well-documented React components with TypeScript.","recommendedModel":"gpt-4o","temperature":0.6,"variables":["componentName","features","accessibilityLevel"]}', 'Forked from post 100', 3, DATEADD('HOUR', -8, CURRENT_TIMESTAMP));
 
 -- Post-Tag associations
 INSERT INTO vibe_post_tag (id, post_id, tag_id) VALUES

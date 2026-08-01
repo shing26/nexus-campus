@@ -4,6 +4,8 @@ import com.nexus.campus.dto.ApiResponse;
 import com.nexus.campus.dto.PageResult;
 import com.nexus.campus.dto.PostCreateRequest;
 import com.nexus.campus.dto.PostPageVo;
+import com.nexus.campus.dto.PostUpdateRequest;
+import com.nexus.campus.dto.PostVersionVo;
 import com.nexus.campus.entity.Channel;
 import com.nexus.campus.entity.VibePost;
 import com.nexus.campus.service.ChannelService;
@@ -61,6 +63,47 @@ public class PostController {
             data.put("auditNotice", "Sensitive pattern detected. Shifting to Firewall Queue.");
         }
         return ApiResponse.success("Data injection protocol acknowledged.", data);
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<Map<String, Object>> updatePost(
+            @PathVariable Long id,
+            @Valid @RequestBody PostUpdateRequest request,
+            @RequestAttribute("currentUserId") Long userId) {
+        VibePost post = vibePostService.updatePost(id, request, userId);
+        Map<String, Object> data = new HashMap<>();
+        data.put("postId", post.getId().toString());
+        return ApiResponse.success("Post updated.", data);
+    }
+
+    @PostMapping("/{id}/fork")
+    public ApiResponse<Map<String, Object>> forkPrompt(
+            @PathVariable Long id,
+            @RequestAttribute("currentUserId") Long userId) {
+        VibePost fork = vibePostService.forkPrompt(id, userId);
+        Map<String, Object> data = new HashMap<>();
+        data.put("postId", fork.getId().toString());
+        data.put("forkedFromId", id);
+        return ApiResponse.success("Template forked.", data);
+    }
+
+    @GetMapping("/{id}/versions")
+    public ApiResponse<List<PostVersionVo>> getPromptVersions(@PathVariable Long id) {
+        return ApiResponse.success(vibePostService.getPromptVersions(id));
+    }
+
+    @PostMapping("/{id}/versions/{version}/restore")
+    public ApiResponse<Void> restorePromptVersion(
+            @PathVariable Long id,
+            @PathVariable Integer version,
+            @RequestAttribute("currentUserId") Long userId,
+            @RequestBody(required = false) Map<String, String> body) {
+        String changeNote = body != null ? body.get("changeNote") : null;
+        boolean success = vibePostService.restorePromptVersion(id, version, userId, changeNote);
+        if (!success) {
+            return ApiResponse.notFound("Version not found.");
+        }
+        return ApiResponse.successMessage("Version restored.");
     }
 
     @GetMapping

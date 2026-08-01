@@ -105,3 +105,19 @@ ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `ai_review_score` int NOT NULL 
 ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `token_count` int NOT NULL DEFAULT 0;
 ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `post_type` varchar(10) NOT NULL DEFAULT 'post';
 ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `prompt_metadata` text;
+ALTER TABLE `vibe_post` ADD COLUMN IF NOT EXISTS `forked_from_id` bigint;
+
+-- 10. Prompt template version history
+CREATE TABLE IF NOT EXISTS `vibe_prompt_version` (
+  `id` bigint NOT NULL PRIMARY KEY,
+  `post_id` bigint NOT NULL,
+  `version` int NOT NULL,
+  `branch` varchar(50) NOT NULL DEFAULT 'main',
+  `title` varchar(150) NOT NULL,
+  `content` longtext NOT NULL,
+  `prompt_metadata` text,
+  `change_note` varchar(255),
+  `created_by` bigint,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS `idx_prompt_version_post` ON `vibe_prompt_version`(`post_id`, `branch`, `version`);

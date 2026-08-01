@@ -6,6 +6,8 @@ import com.nexus.campus.dto.PostAuditResult;
 import com.nexus.campus.dto.PostCreateRequest;
 import com.nexus.campus.dto.PostPageVo;
 import com.nexus.campus.dto.PageResult;
+import com.nexus.campus.dto.PostUpdateRequest;
+import com.nexus.campus.dto.PostVersionVo;
 import com.nexus.campus.entity.*;
 import com.nexus.campus.mapper.*;
 import com.nexus.campus.agent.AiReviewLog;
@@ -26,12 +28,15 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class VibePostServiceImpl implements VibePostService {
+    private static final String DEFAULT_BRANCH = "main";
+
     private void applyTypeFilter(LambdaQueryWrapper<VibePost> queryWrapper, String type) {
         if (type != null && !"all".equals(type)) {
             queryWrapper.eq(VibePost::getPostType, type);
@@ -69,6 +74,9 @@ public class VibePostServiceImpl implements VibePostService {
 
     @Autowired
     private AiReviewLogMapper aiReviewLogMapper;
+
+    @Autowired
+    private PromptVersionMapper promptVersionMapper;
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -124,6 +132,11 @@ public class VibePostServiceImpl implements VibePostService {
             vibePostTagMapper.insertBatch(post.getId(), request.getTags());
         }
 
+        // Prompt templates get an initial immutable version snapshot
+        if ("prompt".equals(post.getPostType())) {
+            saveVersionSnapshot(post, userId, "Initial version");
+        }
+
         // Fetch user for author name and core power award
         SysUser user = sysUserMapper.selectById(userId);
 
@@ -151,6 +164,183 @@ public class VibePostServiceImpl implements VibePostService {
         }
 
         return post;
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "posts", allEntries = true)
+    public VibePost updatePost(Long postId, PostUpdateRequest request, Long userId) {
+        VibePost post = vibePostMapper.selectById(postId);
+        if (post == null) {
+            throw new IllegalArgumentException("Post not found.");
+        }
+        SysUser user = sysUserMapper.selectById(userId);
+        boolean isAdmin = user != null && "ADMIN".equals(user.getRole());
+        if (!isAdmin && !post.getUserId().equals(userId)) {
+            throw new IllegalStateException("Only the author can edit this post.");
+        }
+        if (request.getTitle() != null && !request.getTitle().isBlank()) {
+            post.setTitle(request.getTitle().trim());
+        }
+        if (request.getCategoryId() != null) {
+            Channel channel = channelMapper.selectById(request.getCategoryId());
+            if (channel == null) {
+                throw new IllegalArgumentException("Channel not found.");
+            }
+            post.setCategoryId(request.getCategoryId());
+        }
+        if (request.getContent() != null) {
+            post.setContent(request.getContent());
+        }
+        if (request.getPostType() != null) {
+            post.setPostType(request.getPostType());
+        }
+        if (request.getPromptMetadata() != null) {
+            post.setPromptMetadata(request.getPromptMetadata());
+        }
+
+        String plain = post.getContent().replaceAll("<[^>]*>", "");
+        post.setSummary(plain.length() > 200 ? plain.substring(0, 200) + "..." : plain);
+
+        if (request.getTags() != null) {
+            vibePostTagMapper.delete(new LambdaQueryWrapper<VibePostTag>().eq(VibePostTag::getPostId, postId));
+            if (!request.getTags().isEmpty()) {
+                vibePostTagMapper.insertBatch(postId, request.getTags());
+            }
+        }
+
+        vibePostMapper.updateById(post);
+
+        if ("prompt".equals(post.getPostType())) {
+            String note = request.getChangeNote() != null && !request.getChangeNote().isBlank()
+                    ? request.getChangeNote().trim() : "Updated via editor";
+            saveVersionSnapshot(post, userId, note);
+        }
+
+        VibePost fullPost = vibePostMapper.selectPostWithDetails(postId);
+        if (fullPost != null) {
+            postSearchService.indexPost(fullPost);
+        }
+        return post;
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "posts", allEntries = true)
+    public VibePost forkPrompt(Long postId, Long userId) {
+        VibePost source = vibePostMapper.selectById(postId);
+        if (source == null) {
+            throw new IllegalArgumentException("Source template not found.");
+        }
+        if (!"prompt".equals(source.getPostType())) {
+            throw new IllegalArgumentException("Only prompt templates can be forked.");
+        }
+        if (source.getStatus() == null || source.getStatus() != 1) {
+            throw new IllegalArgumentException("Template is not active.");
+        }
+
+        VibePost fork = new VibePost();
+        fork.setUserId(userId);
+        fork.setCategoryId(source.getCategoryId());
+        fork.setTitle(source.getTitle());
+        fork.setContent(source.getContent());
+        fork.setSummary(source.getSummary());
+        fork.setViewCount(0);
+        fork.setLikeCount(0);
+        fork.setCommentCount(0);
+        fork.setStatus(1);
+        fork.setPostType("prompt");
+        fork.setPromptMetadata(source.getPromptMetadata());
+        fork.setForkedFromId(source.getId());
+        vibePostMapper.insert(fork);
+
+        saveVersionSnapshot(fork, userId, "Forked from post " + source.getId());
+
+        List<VibeTag> tags = vibeTagMapper.selectTagsByPostId(postId);
+        if (tags != null && !tags.isEmpty()) {
+            List<Integer> tagIds = tags.stream().map(VibeTag::getId).collect(Collectors.toList());
+            vibePostTagMapper.insertBatch(fork.getId(), tagIds);
+        }
+
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user != null) {
+            user.setCorePower(user.getCorePower() + 10);
+            sysUserMapper.updateById(user);
+        }
+        return fork;
+    }
+
+    @Override
+    public List<PostVersionVo> getPromptVersions(Long postId) {
+        VibePost post = vibePostMapper.selectById(postId);
+        if (post == null) {
+            return Collections.emptyList();
+        }
+        List<PromptVersion> versions = promptVersionMapper.selectList(
+                new LambdaQueryWrapper<PromptVersion>()
+                        .eq(PromptVersion::getPostId, postId)
+                        .eq(PromptVersion::getBranch, DEFAULT_BRANCH)
+                        .orderByDesc(PromptVersion::getVersion));
+        return versions.stream().map(version -> {
+            PostVersionVo vo = new PostVersionVo();
+            BeanUtils.copyProperties(version, vo);
+            SysUser author = sysUserMapper.selectById(version.getCreatedBy());
+            vo.setAuthorName(author != null ? author.getNickname() : "Unknown");
+            return vo;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "posts", allEntries = true)
+    public boolean restorePromptVersion(Long postId, Integer version, Long userId, String changeNote) {
+        VibePost post = vibePostMapper.selectById(postId);
+        if (post == null) {
+            return false;
+        }
+        SysUser user = sysUserMapper.selectById(userId);
+        boolean isAdmin = user != null && "ADMIN".equals(user.getRole());
+        if (!isAdmin && !post.getUserId().equals(userId)) {
+            throw new IllegalStateException("Only the author can restore versions.");
+        }
+        PromptVersion target = promptVersionMapper.selectOne(
+                new LambdaQueryWrapper<PromptVersion>()
+                        .eq(PromptVersion::getPostId, postId)
+                        .eq(PromptVersion::getBranch, DEFAULT_BRANCH)
+                        .eq(PromptVersion::getVersion, version));
+        if (target == null) {
+            return false;
+        }
+
+        post.setTitle(target.getTitle());
+        post.setContent(target.getContent());
+        post.setPromptMetadata(target.getPromptMetadata());
+        String plain = post.getContent().replaceAll("<[^>]*>", "");
+        post.setSummary(plain.length() > 200 ? plain.substring(0, 200) + "..." : plain);
+        vibePostMapper.updateById(post);
+
+        String note = changeNote != null && !changeNote.isBlank()
+                ? changeNote.trim() : "Restored from v" + version;
+        saveVersionSnapshot(post, userId, note);
+
+        VibePost fullPost = vibePostMapper.selectPostWithDetails(postId);
+        if (fullPost != null) {
+            postSearchService.indexPost(fullPost);
+        }
+        return true;
+    }
+
+    private void saveVersionSnapshot(VibePost post, Long userId, String changeNote) {
+        PromptVersion version = new PromptVersion();
+        version.setPostId(post.getId());
+        version.setVersion(promptVersionMapper.selectMaxVersion(post.getId(), DEFAULT_BRANCH) + 1);
+        version.setBranch(DEFAULT_BRANCH);
+        version.setTitle(post.getTitle());
+        version.setContent(post.getContent());
+        version.setPromptMetadata(post.getPromptMetadata());
+        version.setChangeNote(changeNote);
+        version.setCreatedBy(userId);
+        promptVersionMapper.insert(version);
     }
 
     @Override
@@ -352,6 +542,7 @@ public class VibePostServiceImpl implements VibePostService {
     private PostPageVo convertToPageVo(VibePost post) {
         PostPageVo vo = new PostPageVo();
         BeanUtils.copyProperties(post, vo);
+        vo.setVersionCount((int) promptVersionMapper.selectVersionCount(post.getId()));
 
         // Attach tags
         List<VibeTag> tags = vibeTagMapper.selectTagsByPostId(post.getId());

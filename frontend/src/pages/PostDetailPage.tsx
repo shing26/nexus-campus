@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Heart, Share2, MessageCircle, Eye, Copy, Check } from 'lucide-react';
+import { Heart, Share2, MessageCircle, Eye, Copy, Check, GitFork, History } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
@@ -14,6 +14,7 @@ import Pagination from '../components/Pagination';
 import Avatar from '../components/Avatar';
  import { AiReviewTerminal } from '../components/AiReviewTerminal';
  import EmptyState from '../components/EmptyState';
+ import PromptVersionPanel from '../components/PromptVersionPanel';
  
  import type { PostPageVo } from '../types/post';
 
@@ -78,6 +79,7 @@ function estimateTokens(text: string): number {
 
 export default function PostDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const addToast = useToastStore((s) => s.addToast);
@@ -190,10 +192,30 @@ export default function PostDetailPage() {
   const playgroundTokens = useMemo(() => estimateTokens(renderedPrompt), [renderedPrompt]);
 
   const [playgroundCopied, setPlaygroundCopied] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
+  const [forking, setForking] = useState(false);
   const handleCopyRendered = async () => {
     await navigator.clipboard.writeText(renderedPrompt);
     setPlaygroundCopied(true);
     setTimeout(() => setPlaygroundCopied(false), 2000);
+  };
+
+  const handleFork = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setForking(true);
+    try {
+      const res = await apiClient.post('/posts/' + id + '/fork');
+      addToast('Template forked', 'success');
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      navigate('/post/' + res.data.data.postId);
+    } catch {
+      addToast('Fork failed', 'error');
+    } finally {
+      setForking(false);
+    }
   };
 
   if (isLoading) {
@@ -223,9 +245,9 @@ export default function PostDetailPage() {
    return (
      <div className="max-w-[1400px] mx-auto px-4 py-8">
       {/* HEADER ROW */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-start gap-3 mb-6">
         <Avatar name={post.authorName} size="md" />
-        <div>
+        <div className="flex-1 min-w-0">
           <h1 className="text-base font-semibold font-mono text-slate-100 leading-snug">{post.title}</h1>
           <div className="flex items-center gap-2 text-[11px] font-mono text-slate-500 mt-0.5">
             <span>{post.authorName}</span>
@@ -233,6 +255,9 @@ export default function PostDetailPage() {
             <span className="bg-vibe-cyan/10 border border-vibe-cyan/30 text-vibe-cyan rounded-md px-1.5 py-0.5">{post.categoryName}</span>
             {post.postType === 'prompt' && (
               <span className="bg-vibe-purple/10 border border-vibe-purple/30 text-vibe-purple rounded-md px-1.5 py-0.5">🤖 Template</span>
+            )}
+            {post.postType === 'prompt' && post.versionCount > 0 && (
+              <span className="bg-vibe-cyan/10 border border-vibe-cyan/30 text-vibe-cyan rounded-md px-1.5 py-0.5">v{post.versionCount}</span>
             )}
             <span className="text-slate-700">·</span>
             <span>{timeAgo(post.createTime)}</span>
@@ -243,7 +268,37 @@ export default function PostDetailPage() {
             <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {post.likeCount}</span>
             <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" /> {totalComments}</span>
           </div>
+          {post.forkedFromId && (
+            <Link
+              to={'/post/' + post.forkedFromId}
+              className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-mono text-vibe-purple hover:text-vibe-purple/80 transition-colors"
+            >
+              <GitFork className="w-3 h-3" />
+              Forked from post #{post.forkedFromId}
+            </Link>
+          )}
         </div>
+        {post.postType === 'prompt' && (
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleFork}
+              disabled={forking}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-vibe-purple/20 border border-vibe-purple/30 text-vibe-purple text-[11px] font-mono hover:bg-vibe-purple/30 transition-colors disabled:opacity-50"
+              title="Fork this template"
+            >
+              <GitFork className="w-3.5 h-3.5" />
+              {forking ? 'Forking...' : 'Fork'}
+            </button>
+            <button
+              onClick={() => setShowVersions(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-vibe-card border border-vibe-border text-slate-300 text-[11px] font-mono hover:border-vibe-cyan/40 hover:text-vibe-cyan transition-colors"
+              title="View version history"
+            >
+              <History className="w-3.5 h-3.5" />
+              History
+            </button>
+          </div>
+        )}
       </div>
 
       {/* POST CONTENT — macOS Terminal Wrapper */}
@@ -422,6 +477,13 @@ export default function PostDetailPage() {
           <Pagination page={commentsData.page} pages={commentsData.pages} onPageChange={setCommentPage} />
         )}
       </section>
+
+      <PromptVersionPanel
+        postId={post.id}
+        open={showVersions}
+        onClose={() => setShowVersions(false)}
+        canRestore={!!user && (user.role === 'ADMIN' || user.id === post.userId)}
+      />
     </div>
   );
 }

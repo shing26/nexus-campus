@@ -2,6 +2,7 @@ package com.nexus.campus.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nexus.campus.dto.PostCreateRequest;
+import com.nexus.campus.dto.PostUpdateRequest;
 import com.nexus.campus.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -183,5 +185,85 @@ class PostControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(200)))
                 .andExpect(jsonPath("$.data.list", is(empty())));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/posts/{id}/fork should clone a prompt template")
+    void forkPrompt_withValidToken_shouldSucceed() throws Exception {
+        mockMvc.perform(post(POSTS_URL + "/100/fork")
+                        .header("Authorization", "Bearer " + authToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)))
+                .andExpect(jsonPath("$.data.postId", notNullValue()))
+                .andExpect(jsonPath("$.data.forkedFromId", is(100)));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/posts/{id}/fork without JWT should return 401")
+    void forkPrompt_withoutToken_shouldReturn401() throws Exception {
+        mockMvc.perform(post(POSTS_URL + "/100/fork"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", is(401)));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/posts/{id}/versions should return version history")
+    void getPromptVersions_shouldReturnHistory() throws Exception {
+        mockMvc.perform(get(POSTS_URL + "/100/versions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)))
+                .andExpect(jsonPath("$.data", hasSize(greaterThanOrEqualTo(3))))
+                .andExpect(jsonPath("$.data[0].version", notNullValue()))
+                .andExpect(jsonPath("$.data[0].changeNote", notNullValue()));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/posts/{id} on a prompt template should append a version")
+    void updatePromptTemplate_shouldAppendVersion() throws Exception {
+        PostCreateRequest createRequest = new PostCreateRequest();
+        createRequest.setTitle("Versioned Controller Prompt");
+        createRequest.setContent("Create a versioned controller from this prompt.");
+        createRequest.setCategoryId(2);
+        createRequest.setPostType("prompt");
+        createRequest.setPromptMetadata("{\"role\":\"architect\",\"recommendedModel\":\"gpt-4o\",\"temperature\":0.5,\"variables\":[]}");
+
+        MvcResult createResult = mockMvc.perform(post(POSTS_URL)
+                        .header("Authorization", "Bearer " + authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)))
+                .andReturn();
+        String postId = objectMapper.readTree(createResult.getResponse().getContentAsString())
+                .path("data").path("postId").asText();
+
+        PostUpdateRequest updateRequest = new PostUpdateRequest();
+        updateRequest.setTitle("Versioned Controller Prompt v2");
+        updateRequest.setContent("Updated controller prompt body.");
+        updateRequest.setChangeNote("Tighten instructions");
+
+        mockMvc.perform(put(POSTS_URL + "/" + postId)
+                        .header("Authorization", "Bearer " + authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)));
+
+        mockMvc.perform(get(POSTS_URL + "/" + postId + "/versions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)))
+                .andExpect(jsonPath("$.data", hasSize(2)))
+                .andExpect(jsonPath("$.data[0].version", is(2)));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/posts/{id}/versions/{version}/restore should roll back content")
+    void restorePromptVersion_shouldRollBackContent() throws Exception {
+        mockMvc.perform(post(POSTS_URL + "/101/versions/1/restore")
+                        .header("Authorization", "Bearer " + authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)));
     }
 }

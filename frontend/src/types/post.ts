@@ -15,6 +15,22 @@
    aiReviewScore: number;
    postType?: string;
    promptMetadata?: string;
+   forkedFromId?: number;
+   versionCount?: number;
+ }
+
+ export interface PromptVersion {
+   id: number;
+   postId: number;
+   version: number;
+   branch: string;
+   title: string;
+   content: string;
+   promptMetadata?: string;
+   changeNote?: string;
+   createdBy: number;
+   authorName: string;
+   createTime: string;
  }
  
  export interface Channel {

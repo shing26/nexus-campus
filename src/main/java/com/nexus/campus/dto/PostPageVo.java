@@ -37,4 +37,8 @@ public class PostPageVo implements Serializable {
     private String postType;
 
     private String promptMetadata;
+
+    private Long forkedFromId;
+
+    private Integer versionCount;
 }

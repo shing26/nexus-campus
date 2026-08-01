@@ -68,6 +68,11 @@ public class VibePost implements Serializable {
 
     private String promptMetadata;
 
+    private Long forkedFromId;
+
     @TableField(exist = false)
     private String categoryName;
+
+    @TableField(exist = false)
+    private Integer versionCount;
 }

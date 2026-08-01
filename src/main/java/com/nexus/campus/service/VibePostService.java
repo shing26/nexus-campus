@@ -3,6 +3,8 @@ package com.nexus.campus.service;
 import com.nexus.campus.dto.PostCreateRequest;
 import com.nexus.campus.dto.PostPageVo;
 import com.nexus.campus.dto.PageResult;
+import com.nexus.campus.dto.PostUpdateRequest;
+import com.nexus.campus.dto.PostVersionVo;
 import com.nexus.campus.entity.VibePost;
 
 import java.util.List;
@@ -10,6 +12,14 @@ import java.util.List;
 public interface VibePostService {
 
     VibePost createPost(PostCreateRequest request, Long userId);
+
+    VibePost updatePost(Long postId, PostUpdateRequest request, Long userId);
+
+    VibePost forkPrompt(Long postId, Long userId);
+
+    List<PostVersionVo> getPromptVersions(Long postId);
+
+    boolean restorePromptVersion(Long postId, Integer version, Long userId, String changeNote);
 
     List<PostPageVo> getPendingAuditPosts();
 

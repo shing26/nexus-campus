@@ -23,6 +23,9 @@ export default function EditPostPage() {
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [content, setContent] = useState('');
+  const [postType, setPostType] = useState('post');
+  const [promptMetadata, setPromptMetadata] = useState('');
+  const [changeNote, setChangeNote] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -39,6 +42,8 @@ export default function EditPostPage() {
         setTitle(post.title || '');
         setCategoryId(post.categoryId ?? null);
         setContent(post.content || '');
+        setPostType(post.postType || 'post');
+        setPromptMetadata(post.promptMetadata || '');
       } catch (err: any) {
         setError('Failed to load post.');
       } finally {
@@ -84,7 +89,16 @@ export default function EditPostPage() {
     setSubmitting(true);
     setError('');
     try {
-      await apiClient.put(`/posts/${id}`, { title: title.trim(), categoryId, content });
+      const body: any = {
+        title: title.trim(),
+        categoryId,
+        content,
+        changeNote: changeNote.trim(),
+      };
+      if (postType === 'prompt') {
+        body.promptMetadata = promptMetadata;
+      }
+      await apiClient.put(`/posts/${id}`, body);
       navigate(`/post/${id}`);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update post.');
@@ -178,6 +192,21 @@ export default function EditPostPage() {
             )}
           </div>
         </div>
+
+        {postType === 'prompt' && (
+          <div className="flex items-center gap-3 border border-vibe-border rounded-lg bg-vibe-surface px-3 py-2.5">
+            <span className="text-[10px] font-mono text-vibe-purple bg-vibe-purple/10 border border-vibe-purple/30 rounded px-1.5 py-0.5 shrink-0">
+              New version
+            </span>
+            <input
+              type="text"
+              value={changeNote}
+              onChange={(e) => setChangeNote(e.target.value)}
+              placeholder="Change note, e.g. tighten role instructions (optional)"
+              className="flex-1 bg-transparent text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none"
+            />
+          </div>
+        )}
 
         <div className="flex justify-end gap-3">
           <button
