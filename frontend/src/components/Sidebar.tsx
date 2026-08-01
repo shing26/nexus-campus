@@ -1,5 +1,6 @@
 ﻿import { Link, useLocation } from 'react-router-dom';
-import { Terminal, Palette, Cpu, Zap, Bug, BookOpen, Megaphone, FileText, Activity, Tag } from 'lucide-react';
+import { Terminal, Palette, Cpu, Zap, Bug, BookOpen, Megaphone, FileText, Activity, Tag, Mail, Settings, ShieldCheck, LayoutDashboard } from 'lucide-react';
+import { useAuthStore } from '../stores/authStore';
 
 const channels = [
   { slug: 'announcements', label: 'Announcements', icon: Megaphone, count: 3, desc: '平台公告与更新' },
@@ -13,6 +14,7 @@ const channels = [
 
 export default function Sidebar({ className = '' }: { className?: string }) {
   const location = useLocation();
+  const user = useAuthStore((s) => s.user);
 
   return (
     <aside className={'w-12 shrink-0 ' + className}>
@@ -67,6 +69,47 @@ export default function Sidebar({ className = '' }: { className?: string }) {
           <Tag className="w-4 h-4" />
           <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-vibe-card border border-vibe-border text-[10px] font-mono text-slate-300 whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none z-50 shadow-lg">Hot Tags</span>
         </Link>
+
+        <div className="w-6 h-px bg-vibe-border my-1" />
+
+        <Link
+          to="/user/messages"
+          title="Messages"
+          className="relative group w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-vibe-card hover:text-slate-200 transition-all active:scale-[0.92]"
+        >
+          <Mail className="w-4 h-4" />
+          <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-vibe-card border border-vibe-border text-[10px] font-mono text-slate-300 whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none z-50 shadow-lg">Messages</span>
+        </Link>
+        <Link
+          to="/user/settings"
+          title="Settings"
+          className="relative group w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-vibe-card hover:text-slate-200 transition-all active:scale-[0.92]"
+        >
+          <Settings className="w-4 h-4" />
+          <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-vibe-card border border-vibe-border text-[10px] font-mono text-slate-300 whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none z-50 shadow-lg">Settings</span>
+        </Link>
+
+        {user?.role === 'ADMIN' && (
+          <>
+            <div className="w-6 h-px bg-vibe-border my-1" />
+            <Link
+              to="/admin/audit"
+              title="Audit Queue"
+              className="relative group w-8 h-8 flex items-center justify-center rounded-lg text-amber-400/80 hover:bg-vibe-card hover:text-amber-300 transition-all active:scale-[0.92]"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-vibe-card border border-vibe-border text-[10px] font-mono text-slate-300 whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none z-50 shadow-lg">Audit Queue</span>
+            </Link>
+            <Link
+              to="/admin/dashboard"
+              title="Dashboard"
+              className="relative group w-8 h-8 flex items-center justify-center rounded-lg text-amber-400/80 hover:bg-vibe-card hover:text-amber-300 transition-all active:scale-[0.92]"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-vibe-card border border-vibe-border text-[10px] font-mono text-slate-300 whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none z-50 shadow-lg">Dashboard</span>
+            </Link>
+          </>
+        )}
       </div>
     </aside>
   );

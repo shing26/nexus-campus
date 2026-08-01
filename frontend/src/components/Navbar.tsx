@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useThemeStore } from '../stores/themeStore';
 import { ShimmerButton } from './ui/ShimmerButton';
-import { Plus, Search, Sun, Moon } from 'lucide-react';
+import { Plus, Search, Sun, Moon, Mail, Settings } from 'lucide-react';
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -67,6 +67,17 @@ export default function Navbar() {
                   <span>New Post</span>
                 </ShimmerButton>
               </Link>
+            )}
+
+            {isAuthenticated && (
+              <div className="flex items-center gap-1">
+                <Link to="/user/messages" title="Messages" className="p-1.5 rounded-md hover:bg-vibe-surface transition-colors active:scale-[0.97]">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                </Link>
+                <Link to="/user/settings" title="Settings" className="p-1.5 rounded-md hover:bg-vibe-surface transition-colors active:scale-[0.97]">
+                  <Settings className="w-3.5 h-3.5 text-slate-400" />
+                </Link>
+              </div>
             )}
 
             {/* Auth */}
