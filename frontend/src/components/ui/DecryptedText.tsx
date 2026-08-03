@@ -1,5 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 
+import { useReducedMotion } from 'motion/react';
+
 interface DecryptedTextProps {
   text: string;
   speed?: number;
@@ -14,8 +16,14 @@ export const DecryptedText: React.FC<DecryptedTextProps> = ({
   className = '',
 }) => {
   const [displayText, setDisplayText] = useState('');
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      setDisplayText(text);
+      return;
+    }
+
     let iteration = 0;
     const interval = setInterval(() => {
       setDisplayText(
@@ -38,7 +46,7 @@ export const DecryptedText: React.FC<DecryptedTextProps> = ({
     }, speed);
 
     return () => clearInterval(interval);
-  }, [text, speed]);
+  }, [reduceMotion, text, speed]);
 
   return <span className={`font-mono ${className}`}>{displayText}</span>;
 };

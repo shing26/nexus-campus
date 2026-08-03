@@ -8,6 +8,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Heart, Share2, MessageCircle, Eye, Copy, Check, GitFork, History, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { apiClient } from '../api/client';
+import type { ApiResponse } from '../api/client';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import Avatar from '../components/Avatar';
@@ -16,7 +17,7 @@ import { AiReviewTerminal } from '../components/AiReviewTerminal';
  import EmptyState from '../components/EmptyState';
  import PromptVersionPanel from '../components/PromptVersionPanel';
  
- import type { PostPageVo } from '../types/post';
+ import type { AiReviewDetail, PostPageVo } from '../types/post';
 
 const AI_USER_ID = 999;
 
@@ -113,10 +114,17 @@ export default function PostDetailPage() {
     staleTime: 1000 * 30,
   });
 
-  const aiReviewComment = useMemo(() => {
-    if (!commentsData) return null;
-    return (commentsData as any[]).find((c: any) => Number(c.userId) === AI_USER_ID) || null;
-  }, [commentsData]);
+  const hasCodeBlock = /```[\s\S]*```/.test(post?.content || '');
+  const { data: aiReviewDetail, isLoading: aiReviewLoading, isError: aiReviewError, refetch: refetchAiReview } = useQuery<AiReviewDetail | null>({
+    queryKey: ['agent-logs', 'post', id, 'latest'],
+    queryFn: async () => {
+      const res = await apiClient.get<ApiResponse<AiReviewDetail | null>>(`/agent-logs/post/${id}/latest`);
+      return res.data.data ?? null;
+    },
+    enabled: !!id && post?.aiReviewed === 1 && hasCodeBlock,
+    staleTime: 1000 * 60 * 5,
+    retry: false,
+  });
 
   const commentMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -248,7 +256,6 @@ export default function PostDetailPage() {
 
   const comments = commentsData ?? [];
   const totalComments = post.commentCount;
-  const hasCodeBlock = /```[\s\S]*```/.test(post.content || '');
   const aiPending = hasCodeBlock && post.aiReviewed !== 1;
 
    return (
@@ -381,8 +388,8 @@ export default function PostDetailPage() {
           <span className="text-[11px] font-mono text-vibe-emerald">AI Score: {Math.round(post.aiReviewScore * 10)}/100</span>
         )}
         {aiPending && (
-          <span className="flex items-center gap-1.5 text-[11px] font-mono text-vibe-cyan animate-pulse">
-            <Loader2 className="w-3 h-3 animate-spin" />
+          <span className="flex items-center gap-1.5 text-[11px] font-mono text-vibe-cyan animate-pulse motion-reduce:animate-none">
+            <Loader2 className="w-3 h-3 animate-spin motion-reduce:animate-none" />
             AI Agent reviewing...
           </span>
         )}
@@ -438,19 +445,24 @@ export default function PostDetailPage() {
         <div className="max-w-3xl mx-auto mb-8">
           <div className="relative rounded-xl border border-vibe-cyan/30 bg-vibe-card/70 p-4 font-mono text-xs">
             <div className="flex items-center gap-2 text-vibe-cyan">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin motion-reduce:animate-none" />
               <DecryptedText text="AI Co-Pilot is reviewing this post..." speed={25} />
             </div>
             <p className="mt-1.5 text-slate-500">Review will auto-post a comment with a score when it finishes.</p>
           </div>
         </div>
       )}
-      {post.aiReviewed === 1 && (
+      {hasCodeBlock && post.aiReviewed === 1 && (
         <div className="max-w-3xl mx-auto mb-8">
-          <AiReviewTerminal
-            summary={aiReviewComment?.content || 'Prompt structure complete, input constraints satisfied, generated code has no high-risk logic vulnerabilities.'}
-            score={Math.round((post.aiReviewScore || 0) * 10)}
-          />
+          {aiReviewLoading ? (
+            <AiReviewTerminal state="loading" />
+          ) : aiReviewError ? (
+            <AiReviewTerminal state="error" onRetry={() => refetchAiReview()} />
+          ) : aiReviewDetail ? (
+            <AiReviewTerminal state="data" detail={aiReviewDetail} />
+          ) : (
+            <AiReviewTerminal state="unavailable" />
+          )}
         </div>
       )}
 

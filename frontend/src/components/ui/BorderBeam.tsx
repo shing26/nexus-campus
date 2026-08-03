@@ -28,7 +28,7 @@ export const BorderBeam: React.FC<BorderBeamProps> = ({
       className={`pointer-events-none absolute inset-0 rounded-[inherit] border border-transparent [mask-clip:padding-box,border-box] [mask-composite:intersect] [mask-image:linear-gradient(transparent,transparent),linear-gradient(#000,#000)] ${className}`}
     >
       <div
-        className="absolute aspect-square w-[var(--size)] animate-border-beam bg-gradient-to-l from-[var(--color-from)] via-[var(--color-to)] to-transparent"
+        className="absolute aspect-square w-[var(--size)] animate-border-beam motion-reduce:animate-none bg-gradient-to-l from-[var(--color-from)] via-[var(--color-to)] to-transparent"
         style={{
           offsetPath: 'rect(0 auto auto 0 round 12px)',
         }}

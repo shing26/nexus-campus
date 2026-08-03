@@ -185,6 +185,23 @@ public interface VibePostMapper extends BaseMapper<VibePost> {
             "ORDER BY p.is_pinned DESC, p.create_time DESC")
     List<VibePost> selectActivePostsPinnedFirst();
 
+    @Select("SELECT COUNT(*) FROM vibe_post WHERE user_id = #{userId} AND status = 1")
+    long countActivePostsByUserId(@Param("userId") Long userId);
+
+    @Select("SELECT COALESCE(SUM(like_count), 0) FROM vibe_post WHERE user_id = #{userId} AND status = 1")
+    long sumLikeCountByUserId(@Param("userId") Long userId);
+
+    @Select("SELECT COUNT(*) FROM vibe_post WHERE user_id = #{userId} AND status = 1 AND forked_from_id IS NOT NULL")
+    long countForksByUserId(@Param("userId") Long userId);
+
+    @Select("SELECT p.*, u.nickname as authorName, c.name as categoryName " +
+            "FROM vibe_post p " +
+            "LEFT JOIN sys_user u ON p.user_id = u.id " +
+            "LEFT JOIN vibe_channel c ON p.category_id = c.id " +
+            "WHERE p.user_id = #{userId} AND p.status = 1 " +
+            "ORDER BY p.create_time DESC, p.id DESC LIMIT 10")
+    List<VibePost> selectLatestActivePostsByUserId(@Param("userId") Long userId);
+
     @Update("UPDATE vibe_post SET is_pinned = 1 WHERE id = #{id}")
     int pinPost(@Param("id") Long id);
 

@@ -79,3 +79,43 @@
    low: number;
    unknown: number;
  }
+
+ export interface AiReviewDetail {
+   postId: string;
+   reviewer: string;
+   score: number | null;
+   severity: string;
+   isApproved: boolean | number;
+   codeQuality: string | string[];
+   securityConcerns: string | string[];
+   optimizationSuggestions: string | string[];
+   reviewedAt: string;
+ }
+
+ export interface ProfileStats {
+   posts: number;
+   comments: number;
+   likesReceived: number;
+   avgAiScore: number | null;
+   forks: number;
+   versions: number;
+ }
+
+ export interface ActivityItem {
+   id: string | number;
+   type: string;
+   postId: string | number;
+   title: string;
+   createdAt: string;
+ }
+
+ export interface UserProfileSummary {
+   id: string | number;
+   username: string;
+   nickname?: string;
+   avatar?: string;
+   bio?: string;
+   createTime?: string;
+   stats: ProfileStats;
+   recentActivity: ActivityItem[];
+ }

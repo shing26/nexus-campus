@@ -4,15 +4,18 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexus.campus.agent.AiReviewLog;
 import com.nexus.campus.agent.AiReviewLogMapper;
+import com.nexus.campus.dto.AiReviewDetail;
 import com.nexus.campus.dto.AiLogVo;
 import com.nexus.campus.dto.ApiResponse;
 import com.nexus.campus.dto.PageResult;
 import com.nexus.campus.entity.VibePost;
 import com.nexus.campus.mapper.VibePostMapper;
+import com.nexus.campus.service.AiReviewDetailService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,6 +41,9 @@ public class AiLogController {
 
     @Autowired
     private VibePostMapper vibePostMapper;
+
+    @Autowired
+    private AiReviewDetailService aiReviewDetailService;
 
     @GetMapping
     public ApiResponse<PageResult<AiLogVo>> listLogs(
@@ -67,6 +73,12 @@ public class AiLogController {
             list.add(vo);
         }
         return ApiResponse.success("OK", PageResult.of(page, size, result.getTotal(), list));
+    }
+
+    @GetMapping("/post/{postId}/latest")
+    public ApiResponse<AiReviewDetail> getLatestCodeReview(@PathVariable Long postId) {
+        AiReviewLog log = aiReviewLogMapper.selectLatestCodeReviewByPostId(postId);
+        return ApiResponse.success(aiReviewDetailService.toDetail(log));
     }
 
     @GetMapping("/stats")

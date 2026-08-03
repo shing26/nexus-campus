@@ -57,10 +57,24 @@ INSERT INTO vibe_post (id, title, content, user_id, category_id, status, like_co
 -- Prompt Template Posts
 INSERT INTO vibe_post (id, title, content, user_id, category_id, status, like_count, comment_count, view_count, is_pinned, post_type, prompt_metadata, forked_from_id, create_time) VALUES
 (100, 'React Component Generator',
- 'Create a React component that follows best practices. Define the component name, props interface, and any specific features you need. The component should be type-safe with TypeScript, include proper JSDoc comments, and handle loading/error/empty states.',
+ 'Create a React component that follows best practices. Define the component name, props interface, and any specific features you need. The component should be type-safe with TypeScript, include proper JSDoc comments, and handle loading/error/empty states.
+
+```tsx
+interface ComponentProps {
+  name: string;
+  features: string[];
+}
+```',
  1, 2, 1, 42, 8, 560, 0, 'prompt', '{"role":"You are a senior React developer specializing in component architecture. Generate clean, composable, and well-documented React components with TypeScript. Follow SOLID principles and React best practices.","recommendedModel":"gpt-4o","temperature":0.7,"variables":["componentName","features"]}', NULL, DATEADD('DAY', -3, CURRENT_TIMESTAMP)),
 (101, 'Tailwind UI Prompt Architect',
- 'Design a responsive layout using Tailwind CSS. Specify the layout structure, color scheme preferences, and any specific UI patterns you want to include. The generated code should be production-ready with proper responsive breakpoints and accessibility attributes.',
+ 'Design a responsive layout using Tailwind CSS. Specify the layout structure, color scheme preferences, and any specific UI patterns you want to include. The generated code should be production-ready with proper responsive breakpoints and accessibility attributes.
+
+```tsx
+<main className="grid min-h-screen grid-cols-1 gap-4 p-4 md:grid-cols-12">
+  <aside className="md:col-span-3">Sidebar</aside>
+  <section className="md:col-span-9">Content</section>
+</main>
+```',
  2, 2, 1, 35, 5, 420, 0, 'prompt', '{"role":"You are a Tailwind CSS expert and UI designer. Create beautiful, responsive, and accessible layouts using Tailwind CSS utility classes. Prioritize mobile-first design and adhere to WCAG 2.1 AA standards.","recommendedModel":"gpt-4o","temperature":0.5,"variables":["layout","colorScheme"]}', NULL, DATEADD('DAY', -1, CURRENT_TIMESTAMP)),
 (102, 'React Component Generator',
  'Create a React component that follows best practices. Forked from the React Component Generator template with an extra focus on keyboard accessibility and reduced motion support.',
@@ -112,6 +126,11 @@ INSERT INTO ai_review_log (id, post_id, reviewer, result_json, severity, is_appr
 (9003, 1, 'safety-check-agent', 'Prompt injection', 'critical', 0, DATEADD('HOUR', -6, CURRENT_TIMESTAMP)),
 (9004, 2, 'code-review-agent', '{"score":5,"severity":"unknown"}', 'unknown', 1, DATEADD('DAY', -1, CURRENT_TIMESTAMP)),
 (9005, 100, 'code-review-agent', '{"score":4,"severity":"unknown"}', 'unknown', 0, DATEADD('DAY', -2, CURRENT_TIMESTAMP));
+
+-- Keep post review flags consistent with the seeded code-review logs.
+UPDATE vibe_post SET ai_reviewed = 1, ai_review_score = 9 WHERE id = 100;
+UPDATE vibe_post SET ai_reviewed = 1, ai_review_score = 7 WHERE id = 101;
+UPDATE vibe_post SET ai_reviewed = 1, ai_review_score = 5 WHERE id = 2;
 
 -- AI Agent System Account (id=999, non-login placeholder)
 INSERT INTO sys_user (id, username, password, nickname, avatar, role, core_power, level, status, create_time, update_time)

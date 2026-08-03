@@ -11,6 +11,7 @@ export default {
            card: '#161C2A',
            border: '#232D42',
            cyan: '#10B981',
+           neon: '#06B6D4',
            purple: '#A855F7',
            emerald: '#059669',
          }

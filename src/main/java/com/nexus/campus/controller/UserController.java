@@ -3,10 +3,12 @@ package com.nexus.campus.controller;
 import com.nexus.campus.dto.ApiResponse;
 import com.nexus.campus.dto.PasswordChangeRequest;
 import com.nexus.campus.dto.ProfileUpdateRequest;
+import com.nexus.campus.dto.UserProfileSummary;
 import com.nexus.campus.dto.UserPublicVo;
 import com.nexus.campus.entity.SysUser;
 import com.nexus.campus.mapper.SysUserMapper;
 import com.nexus.campus.service.SysUserService;
+import com.nexus.campus.service.UserProfileSummaryService;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,9 @@ public class UserController {
     @Autowired
     private SysUserMapper sysUserMapper;
 
+    @Autowired
+    private UserProfileSummaryService userProfileSummaryService;
+
     @GetMapping("/search")
     public ApiResponse<List<UserPublicVo>> searchUsers(@RequestParam String keyword) {
         List<SysUser> users = sysUserMapper.searchByKeyword(keyword);
@@ -39,6 +44,15 @@ public class UserController {
             return ApiResponse.notFound("User not found.");
         }
         return ApiResponse.success(convertToPublicVo(user));
+    }
+
+    @GetMapping("/{id}/summary")
+    public ApiResponse<UserProfileSummary> getUserProfileSummary(@PathVariable Long id) {
+        UserProfileSummary summary = userProfileSummaryService.getSummary(id);
+        if (summary == null) {
+            return ApiResponse.notFound("User not found.");
+        }
+        return ApiResponse.success(summary);
     }
 
     private UserPublicVo convertToPublicVo(SysUser user) {

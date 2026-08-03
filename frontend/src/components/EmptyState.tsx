@@ -1,5 +1,5 @@
  import { Link } from 'react-router-dom';
- import { FileQuestion, Sparkles, Search, MessageSquare } from 'lucide-react';
+ import { Activity, FileQuestion, Sparkles, Search, MessageSquare } from 'lucide-react';
  
  const presets = {
    noPosts: {
@@ -23,6 +23,13 @@
      action: null,
      actionLabel: null,
    },
+   noActivity: {
+     icon: Activity,
+     title: 'No recent activity',
+     desc: 'No public activity has been recorded yet.',
+     action: null,
+     actionLabel: null,
+   },
    notFound: {
      icon: FileQuestion,
      title: 'Nothing here',
@@ -40,7 +47,7 @@ interface EmptyStateProps {
   title?: string;
   desc?: string;
   action?: string | null;
-  actionLabel?: string;
+  actionLabel?: string | null;
 }
 
 export default function EmptyState({
