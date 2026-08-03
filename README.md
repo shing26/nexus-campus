@@ -109,8 +109,8 @@ frontend/
 
 ```bash
 # Clone
-git clone https://github.com/shing26/nexus-campus.git
-cd nexus-campus
+git clone https://github.com/shing26/nexus-vibe.git
+cd nexus-vibe
 
 # Backend (H2 in-memory DB, auto-creates schema + seed data)
 mvn clean package -DskipTests
@@ -229,7 +229,7 @@ Run this before handing the project over:
 ## Project Structure
 
 ```
-nexus-campus/
+nexus-vibe/
 ├── frontend/                   # React SPA (Vite + TypeScript + Tailwind)
 │   ├── src/
 │   │   ├── components/         # Shared UI components
