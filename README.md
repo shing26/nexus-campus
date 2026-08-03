@@ -2,7 +2,7 @@
 
 **AI-Powered Vibe Coding & Developer Community**
 
-Nexus-Vibe is a full-stack AI developer community platform — a modern replacement for the traditional campus forum. Built with Spring Boot 3.3 + React, featuring AI Agent code review, LLM-based content safety checks, and an IDE-station dark UI.
+Nexus-Vibe is a full-stack AI developer community platform — a modern replacement for the traditional campus forum. Built with Spring Boot 3.3 + React, it runs as a Multi-Agent assistant platform: async AI code review, LLM-based content safety checks, explainable review panels on every reviewed post, and per-user activity workspaces, all wrapped in an IDE-station dark UI.
 
 ## Tech Stack
 
@@ -36,9 +36,11 @@ Controller (REST API) → Service → Mapper (MyBatis-Plus) → DB
 ```
 
 - **REST API**: `/api/v1/*` endpoints for all CRUD + auth
-- **AI Agent Pipeline**: `AiReviewEvent` → `LlmClient` (OpenAI-compatible) → auto-comment
+- **AI Agent Pipeline**: `AiReviewEvent` → `LlmClient` (OpenAI-compatible) → structured review log → auto-comment + explainable terminal
 - **LLM Safety Check**: DFA pass-through → async LLM classification (4 categories)
 - **Caching**: Redis-backed like toggle, gravity-decay hot ranking, sliding window rate limiting
+- **AI Review Explainability**: `GET /api/v1/agent-logs/post/{postId}/latest` returns the latest structured review (score, severity, verdict, quality, security, suggestions)
+- **User Profile Workspace**: `GET /api/v1/users/{id}/summary` aggregates post/comment/like/fork/version stats and a recent activity timeline
 
 ### Frontend (React SPA)
 
@@ -67,6 +69,7 @@ frontend/
 - [x] Like/unlike with Redis atomic toggle
 - [x] Prompt template Fork with source attribution
 - [x] Prompt template version history, change notes, and rollback
+- [x] User profile workspace with stats grid, recent activity timeline, and published posts
 
 ### AI
 - [x] **AI Code Review Agent**: Asynchronous LLM-powered post review with structured output (score, quality, security, suggestions)
@@ -74,6 +77,7 @@ frontend/
 - [x] **Prompt Injection Guardrails**: Delimiter-based isolation, Chain of Thought analysis
 - [x] **LLM Safety Check**: 4-class classification (Prompt injection / Harmful / Spam / Safe) with per-class handling
 - [x] **Agent run logs dashboard**: severity stats, filters, and review history
+- [x] **AI Review Explainability**: structured review terminal (score, severity, verdict, findings) on post detail pages
 - [x] **Prompt Playground**: variable substitution + token estimate
 
 ### Design
@@ -126,6 +130,8 @@ npm run dev
 |----------|----------|------|
 | `admin` | `123456` | ADMIN |
 | `shing` | `123456` | USER |
+| `alice` | `123456` | USER |
+| `bob` | `123456` | USER |
 
 ### Run with MySQL (Production)
 
@@ -191,11 +197,23 @@ instead (for example in production), set `LLM_ENDPOINT`, `LLM_MODEL`, and
 `LLM_API_KEY` in `.env`. If the endpoint is unreachable, agents log a warning
 and skip LLM calls; the rest of the platform still works normally.
 
+### Privacy & Security Notes
+
+- All demo accounts above are local dev seed data only; use them for local
+  testing and replace or remove them before any real deployment.
+- Never commit real credentials: `.env` is git-ignored, and `.env.example`
+  only ships placeholders. Set `LLM_API_KEY`, `JWT_SECRET`, and `DB_PASSWORD`
+  via local environment variables or a local `.env` file.
+- The JWT secret in `application.yml` is a dev fallback; production must
+  override it through `JWT_SECRET`.
+- This repository intentionally contains no personal data, API keys, or
+  private tokens. If you fork or redeploy, keep it that way.
+
 ### Handoff QA Checklist
 
 Run this before handing the project over:
 
-- [ ] `mvn test` passes (134 tests, H2 in-memory)
+- [ ] `mvn test` passes (139 tests, H2 in-memory)
 - [ ] `cd frontend && npm run build` passes
 - [ ] Login as `admin/123456` and `shing/123456`
 - [ ] Create a prompt template, edit it, verify a new version appears
@@ -203,6 +221,8 @@ Run this before handing the project over:
 - [ ] Restore an older template version and verify content rolls back
 - [ ] Post a regular post, comment, like, and search
 - [ ] Open `/agent-logs` as admin and verify stats + filters
+- [ ] Open a reviewed post and verify the explainable AI terminal (score, severity, verdict, findings)
+- [ ] Open `/user/2` and verify the profile stats grid and recent activity timeline
 - [ ] Open `/admin/audit` and approve/reject a pending post
 - [ ] `docker compose up --build` and verify the full stack on `http://localhost:8080`
 
@@ -234,7 +254,10 @@ nexus-campus/
 ├── CONTEXT.md                  # Domain glossary
 └── docs/
     ├── adr/                    # Architecture Decision Records
+    ├── product/                # Product plans and prioritization
+    ├── design/                 # UI visual system and UX architecture
     ├── research/               # Research documents
+    ├── tickets/                # Implementation tickets
     └── ...
 ```
 
@@ -254,6 +277,12 @@ curl -X POST http://localhost:8081/api/v1/posts \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <TOKEN>" \
   -d '{"title":"My Vibe Coding Setup","content":"Using Cursor + Claude...","categoryId":2}'
+
+# Latest structured AI review for a post (public)
+curl http://localhost:8081/api/v1/agent-logs/post/100/latest
+
+# User profile stats + recent activity (public)
+curl http://localhost:8081/api/v1/users/2/summary
 ```
 
 ## License

@@ -33,8 +33,15 @@ Thumbs.db
 fix_*.py
 .scratch/*.pid
 
-# Local environment
+# Local environment & secrets
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.*
 
 # Node (if any frontend assets land here)
 node_modules/
