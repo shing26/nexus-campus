@@ -107,10 +107,10 @@ campus:
     review:
       enabled: true
     llm:
-      endpoint: https://api.openai.com/v1
+      endpoint: ${LLM_ENDPOINT:http://localhost:11434/v1}
       api-key: ${LLM_API_KEY:}
-      model: gpt-4o
-      timeout: 30s
+      model: ${LLM_MODEL:qwen2.5:7b}
+      timeout: ${LLM_TIMEOUT:30s}
 
 # Logging
 logging:

@@ -23,6 +23,8 @@ public class PostPageVo implements Serializable {
     private Integer likeCount;
     private Integer commentCount;
     private Integer status;
+    private Integer aiReviewed;
+    private Integer aiReviewScore;
     private LocalDateTime createTime;
     private String[] tags;
     

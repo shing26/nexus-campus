@@ -9,6 +9,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 /**
  * Async listener for {@link AiSafetyCheckEvent}.
  * <p>
@@ -185,6 +187,7 @@ public class AiSafetyCheckListener {
             logEntry.setResultJson(resultJson);
             logEntry.setSeverity(severity);
             logEntry.setIsApproved(isApproved);
+            logEntry.setCreatedAt(LocalDateTime.now());
             aiReviewLogMapper.insert(logEntry);
         } catch (Exception e) {
             log.warn("Failed to save safety review log for post {}: {}", postId, e.getMessage());

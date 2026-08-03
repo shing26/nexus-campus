@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -265,6 +266,7 @@ public class AiReviewService {
             logEntry.setResultJson(resultJson);
             logEntry.setSeverity(severity);
             logEntry.setIsApproved(isApproved);
+            logEntry.setCreatedAt(LocalDateTime.now());
             aiReviewLogMapper.insert(logEntry);
         } catch (Exception e) {
             log.warn("Failed to save AI review log for post {}: {}", postId, e.getMessage());

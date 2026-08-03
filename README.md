@@ -170,14 +170,26 @@ Then open `http://localhost:8080`. The stack starts:
 | `DB_USERNAME` / `DB_PASSWORD` | `root` / `root` | MySQL credentials |
 | `REDIS_ENABLED` | `true` | Redis features |
 | `REDIS_HOST` / `REDIS_PORT` | `redis` / `6379` | Redis connection |
-| `LLM_API_KEY` | empty | OpenAI-compatible API key |
-| `LLM_ENDPOINT` | `https://api.openai.com/v1` | Chat completions base URL |
-| `LLM_MODEL` | `gpt-4o` | Default model |
+| `LLM_API_KEY` | empty | OpenAI-compatible API key (required for hosted APIs, optional for local Ollama) |
+| `LLM_ENDPOINT` | `http://localhost:11434/v1` | Chat completions base URL (local Ollama by default) |
+| `LLM_MODEL` | `qwen2.5:7b` | Default model |
 | `JWT_SECRET` | dev default | JWT signing secret (change in prod) |
 | `UPLOAD_DIR` | `/app/uploads` | Upload storage path |
 
-If `LLM_API_KEY` is empty, the AI Review and Safety agents log a warning and
-skip LLM calls; the rest of the platform still works normally.
+### Local LLM (Ollama)
+
+The dev profile targets a local Ollama instance by default, so AI Review and
+Safety agents work out of the box once Ollama is running:
+
+```bash
+ollama pull qwen2.5:7b   # or qwen2.5:3b for a faster, lighter model
+ollama serve
+```
+
+No API key is needed for local Ollama. To use a hosted OpenAI-compatible API
+instead (for example in production), set `LLM_ENDPOINT`, `LLM_MODEL`, and
+`LLM_API_KEY` in `.env`. If the endpoint is unreachable, agents log a warning
+and skip LLM calls; the rest of the platform still works normally.
 
 ### Handoff QA Checklist
 

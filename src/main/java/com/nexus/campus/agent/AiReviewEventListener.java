@@ -54,12 +54,10 @@ public class AiReviewEventListener {
             // Run the review
             aiReviewService.reviewPost(postId, content);
 
-            // Mark as complete (1 = reviewed, approved/pending)
+            // Mark as complete (1 = reviewed, approved/pending); keep the score AiReviewService persisted
             VibePost post = vibePostMapper.selectById(postId);
             if (post != null) {
-                int score = extractScoreFromDb(postId);
                 post.setAiReviewed(1);
-                post.setAiReviewScore(score);
                 vibePostMapper.updateById(post);
             }
             log.info("AI review completed for post {}", postId);
@@ -80,17 +78,4 @@ public class AiReviewEventListener {
         }
     }
 
-    /**
-     * Attempts to read the latest review score from ai_review_log.
-     * Returns 0 if unavailable.
-     */
-    private int extractScoreFromDb(Long postId) {
-        try {
-            // Simple heuristic: score is stored as part of the review comment;
-            // for now use a basic fallback since we don't have a direct score column
-            return 0;
-        } catch (Exception e) {
-            return 0;
-        }
-    }
 }

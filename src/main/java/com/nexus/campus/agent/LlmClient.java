@@ -137,8 +137,26 @@ public class LlmClient {
             return objectMapper.readTree(contentJson);
 
         } catch (Exception e) {
-            log.warn("LLM structured completion failed: {}", e.getMessage());
-            return null;
+            log.warn("LLM structured completion failed, falling back to plain completion: {}", e.getMessage());
+            String text = chatCompletion(systemPrompt, userContent);
+            if (text == null) return null;
+
+            String trimmed = text.trim();
+            try {
+                return objectMapper.readTree(trimmed);
+            } catch (Exception parseEx) {
+                int start = trimmed.indexOf('{');
+                int end = trimmed.lastIndexOf('}');
+                if (start >= 0 && end > start) {
+                    try {
+                        return objectMapper.readTree(trimmed.substring(start, end + 1));
+                    } catch (Exception ignored) {
+                        // fall through
+                    }
+                }
+                log.warn("Failed to parse plain completion as JSON: {}", trimmed);
+                return null;
+            }
         }
     }
 }
