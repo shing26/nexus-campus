@@ -4,8 +4,8 @@ import { Bot, Radio } from 'lucide-react';
 import { apiClient } from '../api/client';
 
 interface AiLog {
-  id: number;
-  postId: number;
+  id: string;
+  postId: string;
   postTitle: string;
   reviewer: string;
   severity: string;

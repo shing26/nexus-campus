@@ -1,5 +1,5 @@
-﻿ export interface PostPageVo {
-   id: number;
+ export interface PostPageVo {
+   id: string;
    title: string;
    content: string;
    summary: string;
@@ -10,30 +10,30 @@
    commentCount: number;
    isPinned: boolean;
    status: number;
-   userId?: number;
+   userId?: string;
    createTime: string;
    aiReviewed: number;
    aiReviewScore: number;
    postType?: string;
    promptMetadata?: string;
-   forkedFromId?: number;
+   forkedFromId?: string;
    versionCount?: number;
  }
 
  export interface PromptVersion {
-   id: number;
-   postId: number;
+   id: string;
+   postId: string;
    version: number;
    branch: string;
    title: string;
    content: string;
    promptMetadata?: string;
    changeNote?: string;
-   createdBy: number;
+   createdBy: string;
    authorName: string;
    createTime: string;
  }
- 
+
  export interface Channel {
    id: number;
    slug: string;
@@ -41,27 +41,27 @@
    description: string;
    icon?: string;
  }
- 
+
  export interface Comment {
-   id: number;
-   postId: number;
+   id: string;
+   postId: string;
    authorName: string;
    content: string;
-   userId: number;
+   userId: string;
    createTime: string;
-}
- 
+ }
+
  export interface PageResponse<T> {
    list: T[];
-   total: number;
+   total: string;
    page: number;
    size: number;
    pages: number;
  }
 
  export interface AiLog {
-   id: number;
-   postId: number;
+   id: string;
+   postId: string;
    postTitle: string;
    reviewer: string;
    severity: string;

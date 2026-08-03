@@ -24,6 +24,46 @@ export default function ChannelPage() {
 
   const channel = channels?.find((c: any) => c.slug === slug);
 
+  const emptyGuides: Record<string, { title: string; desc: string; action: string; actionLabel: string }> = {
+    prompts: {
+      title: '终端就绪，等待第一个 Prompt 入库',
+      desc: '发布一个 System Prompt 模板，AI Agent 会自动审查并回帖。',
+      action: '/post/new?template=prompt',
+      actionLabel: '一键填充示例 Prompt',
+    },
+    debug: {
+      title: '急诊室空转中',
+      desc: '贴上你的报错上下文，AI Agent 与社区会一起定位问题。',
+      action: '/post/new?template=debug',
+      actionLabel: '提交第一个报错',
+    },
+    showcase: {
+      title: '还没有成品展示',
+      desc: '发布你 Vibe Coding 出来的网页、工具或自动化流程。',
+      action: '/post/new?template=showcase',
+      actionLabel: '发布第一个作品',
+    },
+    agents: {
+      title: 'Agent 实战区等待案例',
+      desc: '分享你基于 OpenClaw、Codex 或自研 Multi-Agent 的工作流。',
+      action: '/post/new?template=agents',
+      actionLabel: '分享 Agent 实战',
+    },
+    'vibe-coding': {
+      title: '经验区等待第一篇',
+      desc: '聊聊上下文控制、幻觉治理与 AI 时代架构设计。',
+      action: '/post/new',
+      actionLabel: '写第一篇经验',
+    },
+    resources: {
+      title: '资源聚合区还是空的',
+      desc: '推荐工具链、API 评测与高质量教程链接。',
+      action: '/post/new',
+      actionLabel: '推荐一个资源',
+    },
+  };
+  const emptyGuide = channel ? emptyGuides[channel.slug] : undefined;
+
   const { data: postsData, isLoading } = useQuery({
     queryKey: ['posts', 'channel', slug, page],
     queryFn: async () => {
@@ -99,7 +139,7 @@ export default function ChannelPage() {
               />
             </>
           ) : (
-            <EmptyState preset="noPosts" />
+            <EmptyState preset="noPosts" {...emptyGuide} />
           )}
         </div>
       </div>

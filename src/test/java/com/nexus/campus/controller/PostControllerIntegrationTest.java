@@ -195,7 +195,7 @@ class PostControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(200)))
                 .andExpect(jsonPath("$.data.postId", notNullValue()))
-                .andExpect(jsonPath("$.data.forkedFromId", is(100)));
+                .andExpect(jsonPath("$.data.forkedFromId", is("100")));
     }
 
     @Test

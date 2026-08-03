@@ -7,7 +7,7 @@ import { useToastStore } from '../stores/toastStore';
 import type { PromptVersion } from '../types/post';
 
 interface PromptVersionPanelProps {
-  postId: number;
+  postId: string;
   open: boolean;
   onClose: () => void;
   canRestore: boolean;

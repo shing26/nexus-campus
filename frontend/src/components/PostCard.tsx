@@ -61,7 +61,8 @@ export default function PostCard({ post }: PostCardProps) {
     return new Date(dateStr).toLocaleDateString();
   };
 
-  const scoreColor = post.aiReviewScore >= 80 ? 'text-vibe-cyan' : post.aiReviewScore >= 50 ? 'text-yellow-400' : 'text-red-400';
+  const aiScore = (post.aiReviewScore ?? 0) * 10;
+  const scoreColor = aiScore >= 80 ? 'text-vibe-cyan' : aiScore >= 50 ? 'text-yellow-400' : 'text-red-400';
   const shortSummary = stripHtml(post.summary || post.content).slice(0, SUMMARY_LENGTH);
 
   const meta = post.promptMetadata ? (() => { try { return JSON.parse(post.promptMetadata); } catch { return null; } })() : null;
@@ -183,7 +184,7 @@ export default function PostCard({ post }: PostCardProps) {
               <span className="bg-vibe-purple/10 border border-vibe-purple/30 text-vibe-purple rounded-md px-2 py-0.5 text-[10px] font-mono">Template</span>
             )}
             {post.aiReviewed === 1 && (
-              <span className={'font-mono ' + scoreColor}>AI: {post.aiReviewScore}</span>
+              <span className={'font-mono ' + scoreColor}>AI: {aiScore}</span>
             )}
             <span className="text-slate-500">{post.authorName}</span>
             {meta?.role && (

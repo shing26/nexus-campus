@@ -6,12 +6,13 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Heart, Share2, MessageCircle, Eye, Copy, Check, GitFork, History, Pencil, Trash2 } from 'lucide-react';
+import { Heart, Share2, MessageCircle, Eye, Copy, Check, GitFork, History, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import Avatar from '../components/Avatar';
- import { AiReviewTerminal } from '../components/AiReviewTerminal';
+import { AiReviewTerminal } from '../components/AiReviewTerminal';
+ import { DecryptedText } from '../components/ui/DecryptedText';
  import EmptyState from '../components/EmptyState';
  import PromptVersionPanel from '../components/PromptVersionPanel';
  
@@ -96,6 +97,10 @@ export default function PostDetailPage() {
     },
     enabled: !!id,
     staleTime: 1000 * 60,
+    refetchInterval: (query) => {
+      const data = query.state.data as PostPageVo | undefined;
+      return data && data.aiReviewed !== 1 ? 5000 : false;
+    },
   });
 
   const { data: commentsData } = useQuery({
@@ -110,12 +115,12 @@ export default function PostDetailPage() {
 
   const aiReviewComment = useMemo(() => {
     if (!commentsData) return null;
-    return (commentsData as any[]).find((c: any) => c.userId === AI_USER_ID) || null;
+    return (commentsData as any[]).find((c: any) => Number(c.userId) === AI_USER_ID) || null;
   }, [commentsData]);
 
   const commentMutation = useMutation({
     mutationFn: async (content: string) => {
-      await apiClient.post('/comments', { postId: Number(id), content });
+      await apiClient.post('/comments', { postId: id, content });
     },
     onSuccess: () => {
       setCommentText('');
@@ -243,6 +248,8 @@ export default function PostDetailPage() {
 
   const comments = commentsData ?? [];
   const totalComments = post.commentCount;
+  const hasCodeBlock = /```[\s\S]*```/.test(post.content || '');
+  const aiPending = hasCodeBlock && post.aiReviewed !== 1;
 
    return (
      <div className="max-w-[1400px] mx-auto px-4 py-8">
@@ -371,7 +378,13 @@ export default function PostDetailPage() {
           </button>
         </div>
         {post.aiReviewed === 1 && post.aiReviewScore > 0 && (
-          <span className="text-[11px] font-mono text-vibe-emerald">AI Score: {post.aiReviewScore}/100</span>
+          <span className="text-[11px] font-mono text-vibe-emerald">AI Score: {Math.round(post.aiReviewScore * 10)}/100</span>
+        )}
+        {aiPending && (
+          <span className="flex items-center gap-1.5 text-[11px] font-mono text-vibe-cyan animate-pulse">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            AI Agent reviewing...
+          </span>
         )}
       </div>
 
@@ -420,7 +433,18 @@ export default function PostDetailPage() {
         </div>
       )}
 
-      {/* AI REVIEW TERMINAL */}
+      {/* AI REVIEW STATUS + TERMINAL */}
+      {aiPending && (
+        <div className="max-w-3xl mx-auto mb-8">
+          <div className="relative rounded-xl border border-vibe-cyan/30 bg-vibe-card/70 p-4 font-mono text-xs">
+            <div className="flex items-center gap-2 text-vibe-cyan">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <DecryptedText text="AI Co-Pilot is reviewing this post..." speed={25} />
+            </div>
+            <p className="mt-1.5 text-slate-500">Review will auto-post a comment with a score when it finishes.</p>
+          </div>
+        </div>
+      )}
       {post.aiReviewed === 1 && (
         <div className="max-w-3xl mx-auto mb-8">
           <AiReviewTerminal
@@ -465,7 +489,7 @@ export default function PostDetailPage() {
         {comments.length > 0 ? (
           <div className="space-y-4">
             {comments.map((comment: any, i: number) => {
-              const isAi = comment.userId === AI_USER_ID;
+              const isAi = Number(comment.userId) === AI_USER_ID;
               return (
                 <motion.div
                   key={comment.id}

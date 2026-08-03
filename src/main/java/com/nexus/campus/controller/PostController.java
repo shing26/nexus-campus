@@ -83,7 +83,7 @@ public class PostController {
         VibePost fork = vibePostService.forkPrompt(id, userId);
         Map<String, Object> data = new HashMap<>();
         data.put("postId", fork.getId().toString());
-        data.put("forkedFromId", id);
+        data.put("forkedFromId", id.toString());
         return ApiResponse.success("Template forked.", data);
     }
 
@@ -115,25 +115,35 @@ public class PostController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long userId,
             @RequestParam(defaultValue = "false") boolean hot,
-            @RequestParam(required = false) String type) {
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) Integer aiScoreMin,
+            @RequestParam(required = false) String sort) {
         if (hot) {
             List<PostPageVo> hotPosts = vibePostService.getHotPosts(size);
             return ApiResponse.success(PageResult.of(page, size, hotPosts.size(), hotPosts));
         }
         PageResult<PostPageVo> result;
+        Integer resolvedCategoryId = categoryId;
         if (channelSlug != null && !channelSlug.isEmpty()) {
             Channel channel = channelService.getBySlug(channelSlug);
             if (channel == null) {
-                result = PageResult.of(page, size, 0, Collections.emptyList());
-            } else {
-                result = vibePostService.getPostsByCategory(channel.getId(), page, size, type);
+                return ApiResponse.success(PageResult.of(page, size, 0, Collections.emptyList()));
             }
-        } else if (userId != null) {
+            resolvedCategoryId = channel.getId();
+        }
+        boolean hasExtraFilters = (language != null && !language.isEmpty())
+                || aiScoreMin != null
+                || (sort != null && !sort.isEmpty() && !"latest".equals(sort))
+                || (keyword != null && !keyword.isEmpty() && resolvedCategoryId != null);
+        if (userId != null) {
             result = vibePostService.getPostsByUserId(userId, page, size);
+        } else if (hasExtraFilters) {
+            result = vibePostService.filterPosts(page, size, keyword, resolvedCategoryId, language, aiScoreMin, type, sort);
         } else if (keyword != null && !keyword.isEmpty()) {
             result = vibePostService.searchPosts(keyword, page, size);
-        } else if (categoryId != null) {
-            result = vibePostService.getPostsByCategory(categoryId, page, size, type);
+        } else if (resolvedCategoryId != null) {
+            result = vibePostService.getPostsByCategory(resolvedCategoryId, page, size, type);
         } else {
             result = vibePostService.getActivePosts(page, size, type);
         }

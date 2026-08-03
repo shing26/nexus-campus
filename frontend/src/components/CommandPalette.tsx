@@ -16,7 +16,7 @@ import { apiClient } from '../api/client';
 import { useAuthStore } from '../stores/authStore';
 
 interface Channel {
-  id: number;
+  id: string;
   name: string;
   description: string;
   slug: string;

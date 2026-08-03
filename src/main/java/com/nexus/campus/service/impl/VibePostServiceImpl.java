@@ -420,6 +420,24 @@ public class VibePostServiceImpl implements VibePostService {
     }
 
     @Override
+    public PageResult<PostPageVo> filterPosts(int page, int size, String keyword, Integer categoryId,
+                                              String language, Integer aiScoreMin, String type, String sort) {
+        String normalizedType = "all".equals(type) ? null : (type == null || type.isBlank() ? "post" : type);
+        String normalizedSort = sort == null || sort.isBlank() || "latest".equals(sort) ? "latest" : sort;
+        Page<VibePost> mpPage = vibePostMapper.selectFilteredPage(
+                new Page<>(page, size),
+                keyword,
+                categoryId,
+                normalizedType,
+                language,
+                aiScoreMin,
+                normalizedSort
+        );
+        List<PostPageVo> vos = convertToPageVos(mpPage.getRecords());
+        return PageResult.of(page, size, mpPage.getTotal(), vos);
+    }
+
+    @Override
     public List<PostPageVo> getHotPosts(int limit) {
         return postRankingService.getHotPosts(limit);
     }

@@ -39,6 +39,9 @@ public interface VibePostService {
 
     PageResult<PostPageVo> searchPosts(String keyword, int page, int size);
 
+    PageResult<PostPageVo> filterPosts(int page, int size, String keyword, Integer categoryId,
+                                       String language, Integer aiScoreMin, String type, String sort);
+
     List<PostPageVo> getHotPosts(int limit);
 
     PostPageVo getPostDetail(Long id);

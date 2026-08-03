@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import PostCard from '../components/PostCard';
 import EmptyState from '../components/EmptyState';
-import { Terminal, Palette, Cpu, Zap, Bug } from 'lucide-react';
+import { Terminal, Palette, Cpu, Zap, Bug, GitFork, ArrowRight } from 'lucide-react';
 
 type Tab = 'hot' | 'latest' | 'ai-verified' | 'debug' | 'prompts';
 
@@ -23,6 +23,41 @@ const channelGrid = [
   { slug: 'agents', label: 'Agent 实战', icon: Cpu, count: 48, desc: 'Agent 架构与案例' },
   { slug: 'vibe-coding', label: 'Vibe Coding', icon: Zap, count: 72, desc: 'AI Coding 经验分享' },
   { slug: 'debug', label: '代码急诊室', icon: Bug, count: 36, desc: 'Bug 诊断与修复讨论' },
+];
+
+const missions = [
+  {
+    to: '/post/new?template=debug',
+    label: 'Debug',
+    sub: '贴报错，AI 协助定位',
+    icon: Bug,
+    accent: 'text-vibe-cyan bg-vibe-cyan/10 border-vibe-cyan/30 group-hover/mission:bg-vibe-cyan/20',
+    ring: 'hover:border-vibe-cyan/50 hover:shadow-[0_0_24px_-8px_rgba(6,182,212,0.45)]',
+  },
+  {
+    to: '/post/new?template=prompt',
+    label: 'Prompt',
+    sub: '铸造可复用 System Prompt',
+    icon: Terminal,
+    accent: 'text-vibe-purple bg-vibe-purple/10 border-vibe-purple/30 group-hover/mission:bg-vibe-purple/20',
+    ring: 'hover:border-vibe-purple/50 hover:shadow-[0_0_24px_-8px_rgba(168,85,247,0.45)]',
+  },
+  {
+    to: '/post/new?template=showcase',
+    label: 'Showcase',
+    sub: '发布 Vibe Coding 成品',
+    icon: Palette,
+    accent: 'text-vibe-emerald bg-vibe-emerald/10 border-vibe-emerald/30 group-hover/mission:bg-vibe-emerald/20',
+    ring: 'hover:border-vibe-emerald/50 hover:shadow-[0_0_24px_-8px_rgba(16,185,129,0.45)]',
+  },
+  {
+    to: '/channel/prompts',
+    label: 'Fork',
+    sub: '从社区模板二次开发',
+    icon: GitFork,
+    accent: 'text-amber-400 bg-amber-400/10 border-amber-400/30 group-hover/mission:bg-amber-400/20',
+    ring: 'hover:border-amber-400/50 hover:shadow-[0_0_24px_-8px_rgba(251,191,36,0.45)]',
+  },
 ];
 
 function SkeletonCard() {
@@ -44,6 +79,13 @@ export default function HomePage() {
     queryFn: async () => {
       const params: Record<string, any> = { size: 10 };
       if (activeTab === 'hot') params.hot = true;
+      if (activeTab === 'ai-verified') {
+        params.aiScoreMin = 1;
+        params.sort = 'ai';
+      }
+      if (activeTab === 'debug') {
+        params.channelSlug = 'debug';
+      }
       if (activeTab === 'prompts') {
         params.type = 'prompt';
       } else {
@@ -60,6 +102,39 @@ export default function HomePage() {
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 py-6 space-y-6">
+      {/* Mission Control — first-screen task entrances */}
+      <div className="border border-vibe-border rounded-xl overflow-hidden bg-vibe-surface/40">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-vibe-card/70 border-b border-vibe-border">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Mission Control</span>
+          <span className="hidden sm:inline text-[10px] font-mono text-vibe-cyan/70">Pick a mission to start</span>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 p-3">
+          {missions.map((m) => {
+            const Icon = m.icon;
+            return (
+              <Link
+                key={m.label}
+                to={m.to}
+                className={
+                  'group/mission relative rounded-xl border border-vibe-border bg-vibe-card/40 p-3.5 transition-all active:scale-[0.97] ' + m.ring
+                }
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className={'w-8 h-8 rounded-lg border flex items-center justify-center transition-colors ' + m.accent}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover/mission:text-slate-300 transition-colors" />
+                </div>
+                <p className="mt-3 text-xs font-mono font-semibold text-slate-200 group-hover/mission:text-white transition-colors">
+                  {m.label}
+                </p>
+                <p className="mt-0.5 text-[10px] font-mono text-slate-500 leading-snug">{m.sub}</p>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Channel Grid — full-width, no sidebar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
         {channelGrid.map((ch) => {
@@ -104,7 +179,15 @@ export default function HomePage() {
       </div>
 
       {/* Terminal Hero Banner (shown when no posts) */}
-      {isEmpty && <EmptyState preset="noPosts" />}
+      {isEmpty && (
+        <EmptyState
+          preset="noPosts"
+          title="终端就绪，等待第一个 Vibe 帖子"
+          desc="发一篇 Prompt、Debug 或成品展示，AI Agent 会自动加入审查。"
+          action="/post/new?template=prompt"
+          actionLabel="一键填充示例 Prompt"
+        />
+      )}
 
       {/* Post Feed */}
       {isLoading ? (

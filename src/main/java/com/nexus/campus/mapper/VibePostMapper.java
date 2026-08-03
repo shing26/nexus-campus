@@ -47,6 +47,39 @@ public interface VibePostMapper extends BaseMapper<VibePost> {
                                   @Param("categoryId") Integer categoryId,
                                   @Param("postType") String postType);
 
+    @Select({"<script>",
+            "SELECT p.*, u.nickname as authorName, c.name as categoryName ",
+            "FROM vibe_post p ",
+            "LEFT JOIN sys_user u ON p.user_id = u.id ",
+            "LEFT JOIN vibe_channel c ON p.category_id = c.id ",
+            "WHERE p.status = 1 ",
+            "<if test='keyword != null and keyword != \"\"'>",
+            " AND (LOWER(p.title) LIKE LOWER(CONCAT('%', #{keyword}, '%')) ",
+            " OR LOWER(p.content) LIKE LOWER(CONCAT('%', #{keyword}, '%'))) ",
+            "</if>",
+            "<if test='categoryId != null'> AND p.category_id = #{categoryId} </if>",
+            "<if test='postType != null'> AND p.post_type = #{postType} </if>",
+            "<if test='language != null and language != \"\"'>",
+            " AND (LOWER(p.content) LIKE LOWER(CONCAT('%', '```', #{language}, '%')) ",
+            " OR LOWER(COALESCE(p.prompt_metadata, '')) LIKE LOWER(CONCAT('%', #{language}, '%'))) ",
+            "</if>",
+            "<if test='aiScoreMin != null'>",
+            " AND p.ai_reviewed = 1 AND p.ai_review_score * 10 &gt;= #{aiScoreMin} ",
+            "</if>",
+            "<choose>",
+            "<when test='sort == \"hot\"'> ORDER BY p.is_pinned DESC, p.like_count DESC, p.create_time DESC </when>",
+            "<when test='sort == \"ai\"'> ORDER BY p.ai_reviewed DESC, p.ai_review_score DESC, p.create_time DESC </when>",
+            "<otherwise> ORDER BY p.is_pinned DESC, p.create_time DESC </otherwise>",
+            "</choose>",
+            "</script>"})
+    Page<VibePost> selectFilteredPage(Page<VibePost> page,
+                                      @Param("keyword") String keyword,
+                                      @Param("categoryId") Integer categoryId,
+                                      @Param("postType") String postType,
+                                      @Param("language") String language,
+                                      @Param("aiScoreMin") Integer aiScoreMin,
+                                      @Param("sort") String sort);
+
     @Select("SELECT p.*, u.nickname as authorName, c.name as categoryName " +
             "FROM vibe_post p " +
             "LEFT JOIN sys_user u ON p.user_id = u.id " +

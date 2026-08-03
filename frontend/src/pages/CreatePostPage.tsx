@@ -7,7 +7,7 @@ import { useAuthStore } from "../stores/authStore";
 import { useToastStore } from "../stores/toastStore";
 import { useChannels, type Channel } from "../api/useChannels";
 import {
-  Terminal, Sparkles, Tag, Code2, Save, Send,
+  Terminal, Sparkles, Tag, Code2, Save, Send, Bug, Palette, Cpu,
 } from "lucide-react";
 
 function estimateTokens(text: string): number {
@@ -53,6 +53,82 @@ You are an expert coding assistant. Follow these guidelines:
 ## User Request
 `;
 
+const TEMPLATES = [
+  {
+    id: "debug",
+    label: "Debug",
+    desc: "贴报错上下文",
+    icon: Bug,
+    channelSlug: "debug",
+    postType: "post" as const,
+    scaffold: `## 现象
+<!-- 描述发生了什么，期望结果是什么 -->
+
+## 报错上下文
+\`\`\`text
+粘贴报错信息
+\`\`\`
+
+## 已尝试
+- 
+
+## 补充信息
+- 语言/框架：
+- 运行环境：`,
+  },
+  {
+    id: "prompt",
+    label: "Prompt",
+    desc: "System Prompt 模板",
+    icon: Terminal,
+    channelSlug: "prompts",
+    postType: "prompt" as const,
+    promptRole: "Expert coding assistant",
+    recommendedModel: "",
+    temperature: 0.7,
+    variablesStr: "",
+    scaffold: PROMPT_TEMPLATE,
+  },
+  {
+    id: "showcase",
+    label: "Showcase",
+    desc: "Vibe Coding 成品",
+    icon: Palette,
+    channelSlug: "showcase",
+    postType: "post" as const,
+    scaffold: `## 作品简介
+<!-- 一句话说明这是什么 -->
+
+## 技术亮点
+- 
+
+## 演示 / 链接
+- [项目链接]()
+
+## 说明
+<!-- 运行方式、截图或补充背景 -->`,
+  },
+  {
+    id: "agents",
+    label: "Agent",
+    desc: "Agent 实战案例",
+    icon: Cpu,
+    channelSlug: "agents",
+    postType: "post" as const,
+    scaffold: `## Agent 目标
+<!-- 这个 Agent 要完成什么任务 -->
+
+## 架构与工具
+- 
+
+## 运行效果
+- 
+
+## 踩坑与经验
+- `,
+  },
+];
+
 const DRAFT_KEY = "nexus_vibe_drafts";
 
 export default function CreatePostPage() {
@@ -80,6 +156,30 @@ export default function CreatePostPage() {
   const [recommendedModel, setRecommendedModel] = useState("");
   const [temperature, setTemperature] = useState(0.7);
   const [variablesStr, setVariablesStr] = useState("");
+  const [template, setTemplate] = useState<string>(searchParams.get("template") || "");
+
+  // Apply template scaffold once channels are available
+  useEffect(() => {
+    if (draftId || !channels || !template) return;
+    const tpl = TEMPLATES.find((t) => t.id === template);
+    if (!tpl) return;
+    const ch = channels.find((c: Channel) => c.slug === tpl.channelSlug);
+    if (ch) setCategoryId(ch.id);
+    setPostType(tpl.postType);
+    setContent(tpl.scaffold);
+    setTitle("");
+    setPromptRole("promptRole" in tpl && tpl.promptRole ? tpl.promptRole : "");
+    setRecommendedModel("recommendedModel" in tpl && tpl.recommendedModel ? tpl.recommendedModel : "");
+    setTemperature("temperature" in tpl && tpl.temperature != null ? tpl.temperature : 0.7);
+    setVariablesStr("variablesStr" in tpl && tpl.variablesStr ? tpl.variablesStr : "");
+    setActiveTab("editor");
+  }, [template, channels, draftId]);
+
+  const selectTemplate = (id: string) => {
+    if (id === template) return;
+    setTemplate(id);
+    navigate("/post/new?template=" + id, { replace: true });
+  };
 
   const displayChannels = useMemo(() => {
     if (!channels) return [];
@@ -165,11 +265,11 @@ export default function CreatePostPage() {
     if (displayChannels.length > 0) {
       const selectedIsAnnouncements =
         channels?.find((ch: Channel) => ch.id === categoryId)?.slug === "announcements";
-      if (categoryId === null || (!isAdmin && selectedIsAnnouncements)) {
+      if (!template && (categoryId === null || (!isAdmin && selectedIsAnnouncements))) {
         setCategoryId(displayChannels[0].id);
       }
     }
-  }, [displayChannels, channels, categoryId, isAdmin]);
+  }, [displayChannels, channels, categoryId, isAdmin, template]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,6 +338,50 @@ export default function CreatePostPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* TEMPLATE WIZARD */}
+        <div className="rounded-xl border border-vibe-border overflow-hidden bg-vibe-surface/40">
+          <div className="flex items-center justify-between px-3 py-2 bg-vibe-card/60 border-b border-vibe-border">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Template Wizard</span>
+            <span className="text-[10px] font-mono text-slate-600">Select a mission to prefill the studio</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5">
+            {TEMPLATES.map((tpl) => {
+              const Icon = tpl.icon;
+              const active = template === tpl.id;
+              return (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() => selectTemplate(tpl.id)}
+                  className={
+                    "flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-all active:scale-[0.97] " +
+                    (active
+                      ? "bg-vibe-cyan/15 border-vibe-cyan/40"
+                      : "bg-vibe-card/40 border-vibe-border hover:border-vibe-cyan/30")
+                  }
+                >
+                  <span
+                    className={
+                      "w-7 h-7 rounded-md border flex items-center justify-center shrink-0 " +
+                      (active
+                        ? "bg-vibe-cyan/20 border-vibe-cyan/40 text-vibe-cyan"
+                        : "bg-vibe-surface border-vibe-border text-slate-500")
+                    }
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className={"block text-[11px] font-mono font-semibold " + (active ? "text-vibe-cyan" : "text-slate-300")}>
+                      {tpl.label}
+                    </span>
+                    <span className="block text-[10px] font-mono text-slate-600 truncate">{tpl.desc}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Post type toggle */}
         <div className="flex items-center gap-2">
           <button
